@@ -4,9 +4,14 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from .models import CustomUser
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
+from .serializers import (
+    UserRegistrationSerializer,
+    UserLoginSerializer,
+    UserProfileSerializer,
+    AdminUserSerializer,
+)
 
 
 def generate_jwt_token(user):
@@ -91,9 +96,41 @@ class ValidateTokenView(APIView):
                 'valid': True,
                 'user_id': str(user.id),
                 'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff,
+                'is_active': user.is_active,
             })
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, CustomUser.DoesNotExist):
             return Response({'valid': False, 'error': 'Invalid or expired token.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class AdminUsersView(APIView):
+    """Admin: list all users for customer management."""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        users = CustomUser.objects.all().order_by('-created_at')
+        serializer = AdminUserSerializer(users, many=True)
+        return Response(serializer.data)
+
+
+class AdminUserDetailView(APIView):
+    """Admin: update a user profile and role flags."""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def patch(self, request, user_id):
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminUserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class HealthCheckView(APIView):

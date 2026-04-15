@@ -6,5 +6,7 @@ urlpatterns = [
     path('login/', views.LoginView.as_view(), name='login'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('validate-token/', views.ValidateTokenView.as_view(), name='validate-token'),
+    path('admin/users/', views.AdminUsersView.as_view(), name='admin-users'),
+    path('admin/users/<uuid:user_id>/', views.AdminUserDetailView.as_view(), name='admin-user-detail'),
     path('health/', views.HealthCheckView.as_view(), name='health'),
 ]

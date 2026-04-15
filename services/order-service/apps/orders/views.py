@@ -8,11 +8,12 @@ from .models import Order, OrderItem
 from .serializers import OrderSerializer, CreateOrderSerializer
 
 
-def get_user_id_from_token(request):
-    """Validate JWT token via user-service and return user_id."""
+def get_user_from_token(request):
+    """Validate JWT token via user-service and return user context."""
     auth_header = request.headers.get('Authorization', '')
     if not auth_header.startswith('Bearer '):
         return None
+
     token = auth_header.split(' ')[1]
     try:
         resp = requests.post(
@@ -21,10 +22,27 @@ def get_user_id_from_token(request):
             timeout=5,
         )
         if resp.status_code == 200 and resp.json().get('valid'):
-            return resp.json()['user_id']
+            return resp.json()
     except requests.RequestException:
         pass
     return None
+
+
+def get_user_id_from_token(request):
+    """Validate JWT token via user-service and return user_id."""
+    user_data = get_user_from_token(request)
+    if not user_data:
+        return None
+    return user_data.get('user_id')
+
+
+def ensure_admin_user(request):
+    user_data = get_user_from_token(request)
+    if not user_data:
+        return None, Response({'error': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+    if not user_data.get('is_staff'):
+        return None, Response({'error': 'Admin access required.'}, status=status.HTTP_403_FORBIDDEN)
+    return user_data, None
 
 
 class OrderListView(APIView):
@@ -144,6 +162,50 @@ class UpdateOrderStatusView(APIView):
             return Response(OrderSerializer(order).data)
         except Order.DoesNotExist:
             return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AdminOrderListView(APIView):
+    """Admin: list all orders."""
+
+    def get(self, request):
+        _, error = ensure_admin_user(request)
+        if error:
+            return error
+
+        orders = Order.objects.prefetch_related('items').all().order_by('-created_at')
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+
+class AdminOrderStatusUpdateView(APIView):
+    """Admin: update order status."""
+
+    def patch(self, request, order_id):
+        _, error = ensure_admin_user(request)
+        if error:
+            return error
+
+        new_status = request.data.get('status')
+        valid_statuses = [choice[0] for choice in Order.Status.choices]
+        if new_status not in valid_statuses:
+            return Response(
+                {'error': 'Invalid status.', 'choices': valid_statuses},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            order = Order.objects.prefetch_related('items').get(id=order_id)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        order.status = new_status
+        if 'payment_id' in request.data:
+            order.payment_id = request.data.get('payment_id')
+        order.save()
+        return Response(OrderSerializer(order).data)
+
+    def put(self, request, order_id):
+        return self.patch(request, order_id)
 
 
 class HealthCheckView(APIView):

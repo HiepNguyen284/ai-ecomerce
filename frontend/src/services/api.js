@@ -87,6 +87,36 @@ class ApiService {
     });
   }
 
+  // Admin - Products
+  async getAdminProducts(params = '') {
+    return this.request(`${this.baseUrl}/products/admin/products/${params ? '?' + params : ''}`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async createAdminProduct(productData) {
+    return this.request(`${this.baseUrl}/products/admin/products/`, {
+      method: 'POST',
+      headers: this.getHeaders(true),
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async updateAdminProduct(productId, productData) {
+    return this.request(`${this.baseUrl}/products/admin/products/${productId}/`, {
+      method: 'PATCH',
+      headers: this.getHeaders(true),
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async deleteAdminProduct(productId) {
+    return this.request(`${this.baseUrl}/products/admin/products/${productId}/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(true),
+    });
+  }
+
   // Cart
   async getCart() {
     return this.request(`${this.baseUrl}/cart/`, {
@@ -135,6 +165,36 @@ class ApiService {
   async getOrder(orderId) {
     return this.request(`${this.baseUrl}/orders/${orderId}/`, {
       headers: this.getHeaders(true),
+    });
+  }
+
+  // Admin - Orders
+  async getAdminOrders() {
+    return this.request(`${this.baseUrl}/orders/admin/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async updateAdminOrderStatus(orderId, status) {
+    return this.request(`${this.baseUrl}/orders/admin/${orderId}/status/`, {
+      method: 'PATCH',
+      headers: this.getHeaders(true),
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // Admin - Users
+  async getAdminUsers() {
+    return this.request(`${this.baseUrl}/users/admin/users/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async updateAdminUser(userId, userData) {
+    return this.request(`${this.baseUrl}/users/admin/users/${userId}/`, {
+      method: 'PATCH',
+      headers: this.getHeaders(true),
+      body: JSON.stringify(userData),
     });
   }
 

@@ -77,6 +77,9 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Inter-service URLs
+USER_SERVICE_URL = os.environ.get('USER_SERVICE_URL', 'http://user-service:8000')
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True

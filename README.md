@@ -1,109 +1,208 @@
-# 🛒 ShopVerse — Microservice E-Commerce Platform
+# ShopVerse - Nen tang thuong mai dien tu Microservices
 
-A full-stack e-commerce platform built with a **microservice architecture**, powered by Docker.
+ShopVerse la du an e-commerce full-stack duoc tach thanh nhieu microservice va chay bang Docker Compose.
 
-## 🏗️ Architecture
+## 1. Tong quan kien truc
 
-```
-┌──────────────────────────────────────────────────────┐
-│                   Caddy Gateway (:80)                │
-│              (Reverse Proxy + Load Balancer)          │
-└──────┬────────┬────────┬────────┬────────┬───────────┘
-       │        │        │        │        │
-  ┌────▼──┐ ┌──▼────┐ ┌─▼───┐ ┌─▼────┐ ┌─▼──────┐
-  │ User  │ │Product│ │Cart │ │Order │ │Payment │
-  │Service│ │Service│ │Svc  │ │Svc   │ │Service │
-  └───┬───┘ └──┬────┘ └──┬──┘ └──┬───┘ └───┬────┘
-      │        │         │       │          │
-  ┌───▼───┐ ┌──▼────┐ ┌──▼──┐ ┌─▼────┐ ┌──▼─────┐
-  │UserDB │ │ProdDB │ │CartDB│ │OrdDB │ │PayDB   │
-  │PG 17  │ │PG 17  │ │PG 17│ │PG 17 │ │PG 17   │
-  └───────┘ └───────┘ └─────┘ └──────┘ └────────┘
-```
+- Gateway: Caddy reverse proxy, dinh tuyen toan bo request vao frontend va cac API service
+- Frontend: React + Vite
+- Backend: 5 Django services
+    - user-service
+    - product-service
+    - cart-service
+    - order-service
+    - payment-service
+- Database: PostgreSQL 17 dung chung 1 instance, tach database theo service
 
-## 🚀 Tech Stack
+## 2. Cong va dia chi truy cap
 
-| Component       | Technology        |
-|-----------------|-------------------|
-| **Frontend**    | React 18 + Vite   |
-| **Backend**     | Django 5.1 + DRF  |
-| **Database**    | PostgreSQL 17     |
-| **API Gateway** | Caddy 2           |
-| **Container**   | Docker + Compose  |
+| Thanh phan | Truy cap tu may host |
+|---|---|
+| Frontend + API Gateway | http://localhost:8080 |
+| Gateway healthcheck | http://localhost:8080/health |
+| PostgreSQL (host port) | localhost:5444 |
 
-## 📁 Project Structure
+Ghi chu:
+- Cac service noi bo trong Docker network van ket noi DB qua ecommerce-db:5432
+- Frontend goi API qua duong dan /api (cung origin voi gateway)
 
-```
-ai-ecomerce/
-├── docker-compose.yml          # Orchestration
-├── gateway/
-│   └── Caddyfile               # API Gateway config
-├── frontend/                   # React SPA
-│   ├── src/
-│   │   ├── components/         # Navbar, Footer
-│   │   ├── pages/              # Home, Products, Cart, Orders, Auth
-│   │   └── services/           # API client
-│   └── Dockerfile
-└── services/
-    ├── user-service/            # Authentication & Users
-    ├── product-service/         # Product catalog (13 seeded products)
-    ├── cart-service/            # Shopping cart
-    ├── order-service/           # Order management
-    └── payment-service/         # Payment processing
-```
+## 3. Quick start
 
-## 🏃 Quick Start
+### 3.1 Yeu cau
+
+- Docker Desktop (hoac Docker Engine + Compose plugin)
+
+### 3.2 Chay du an
 
 ```bash
-# Clone and run
-docker-compose up --build
-
-# Access the app
-open http://localhost:8080
+docker compose up -d --build
 ```
 
-## 📡 API Endpoints
+Sau khi chay xong:
+- Mo trinh duyet: http://localhost:8080
+- Kiem tra trang thai container:
 
-### User Service (`/api/users/`)
-- `POST /register/` — Register new user
-- `POST /login/` — Login + JWT token
-- `GET /profile/` — Get user profile
-- `POST /validate-token/` — Validate JWT (internal)
-
-### Product Service (`/api/products/`)
-- `GET /` — List all products (search, filter, sort)
-- `GET /<slug>/` — Product detail
-- `GET /categories/` — List categories
-- `POST /stock-check/` — Check stock (internal)
-
-### Cart Service (`/api/cart/`)
-- `GET /` — Get user cart
-- `POST /add/` — Add item to cart
-- `PUT /items/<id>/` — Update quantity
-- `DELETE /items/<id>/` — Remove item
-
-### Order Service (`/api/orders/`)
-- `GET /` — List user orders
-- `POST /create/` — Create order from cart
-- `GET /<id>/` — Order detail
-- `POST /<id>/cancel/` — Cancel order
-
-### Payment Service (`/api/payments/`)
-- `POST /create/` — Process payment
-- `GET /` — List user payments
-- `GET /order/<id>/` — Payment by order
-
-## 🔒 Authentication
-
-JWT-based authentication. Include token in requests:
+```bash
+docker compose ps
 ```
+
+### 3.3 Dung du an
+
+```bash
+docker compose down
+```
+
+Neu muon xoa toan bo du lieu DB (volume):
+
+```bash
+docker compose down -v
+```
+
+## 4. Seed du lieu san pham
+
+product-service tu dong goi lenh seed khi container khoi dong.
+
+Ban hien tai:
+- 12 category
+- Mac dinh 240 san pham (20 san pham/category)
+- Gia duoc scale theo thi truong Viet Nam (VND)
+- Moi san pham co image_url rieng
+
+Danh sach category:
+- Smartphones
+- Laptops
+- Audio
+- Clothing
+- Shoes
+- Home Appliances
+- Kitchen
+- Books
+- Gaming
+- Watches
+- Sports & Fitness
+- Beauty & Care
+
+### 4.1 Reseed thu cong
+
+Seed 240 san pham (mac dinh):
+
+```bash
+docker exec ecommerce-product-service python manage.py seed_products --per-category 20 --seed 2026
+```
+
+Seed 300 san pham:
+
+```bash
+docker exec ecommerce-product-service python manage.py seed_products --per-category 25 --seed 2026
+```
+
+Luu y:
+- Lenh seed la kieu upsert theo slug, co the chay lai de cap nhat du lieu ma khong tao trung lap khong kiem soat.
+
+## 5. API route qua gateway
+
+Tat ca API deu di qua gateway tai http://localhost:8080.
+
+- /api/users/* -> user-service
+- /api/products/* -> product-service
+- /api/cart/* -> cart-service
+- /api/orders/* -> order-service
+- /api/payments/* -> payment-service
+
+## 6. Endpoint chinh theo service
+
+### User Service (/api/users/)
+- POST /register/
+- POST /login/
+- GET /profile/
+- POST /validate-token/ (internal)
+
+### Product Service (/api/products/)
+- GET /
+- GET /<slug>/
+- GET /categories/
+- POST /stock-check/ (internal)
+
+### Cart Service (/api/cart/)
+- GET /
+- POST /add/
+- PUT /items/<id>/
+- DELETE /items/<id>/
+
+### Order Service (/api/orders/)
+- GET /
+- POST /create/
+- GET /<id>/
+- POST /<id>/cancel/
+
+### Payment Service (/api/payments/)
+- POST /create/
+- GET /
+- GET /order/<id>/
+
+## 7. Xac thuc
+
+He thong dung JWT. Gui token qua header:
+
+```http
 Authorization: Bearer <token>
 ```
 
-## 🌱 Seed Data
+## 8. Ket noi PostgreSQL tu may host
 
-Product service auto-seeds **13 products** across 4 categories on first boot:
-- Electronics (4 products)
-- Clothing (3 products)
-- Home & Kitchen (3 products)
-- Books (2 products)
+Thong so mac dinh:
+- Host: localhost
+- Port: 5444
+- User: postgres
+- Password: postgres
+
+Vi du dung psql:
+
+```bash
+psql -h localhost -p 5444 -U postgres -d product_db
+```
+
+## 9. Cau truc thu muc chinh
+
+```text
+ai-ecomerce/
+├── docker-compose.yml
+├── gateway/
+│   └── Caddyfile
+├── frontend/
+│   ├── src/
+│   └── Dockerfile
+├── services/
+│   ├── user-service/
+│   ├── product-service/
+│   ├── cart-service/
+│   ├── order-service/
+│   └── payment-service/
+└── database/
+        └── init.sql
+```
+
+## 10. Troubleshooting nhanh
+
+1. Frontend khong hien thi du lieu
+- Kiem tra gateway va frontend dang chay:
+
+```bash
+docker compose ps
+```
+
+- Kiem tra health gateway:
+
+```bash
+curl http://localhost:8080/health
+```
+
+2. DB khong ket noi duoc tu host
+- Kiem tra map cong 5444:5432 trong docker-compose.yml
+- Kiem tra container ecommerce-db dang healthy
+
+3. Muon xem log realtime
+
+```bash
+docker compose logs -f gateway frontend product-service
+```
