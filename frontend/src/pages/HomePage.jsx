@@ -79,16 +79,12 @@ function HomePage() {
             <div className="loading-spinner"><div className="spinner"></div></div>
           ) : (
             Object.entries(productsByCategory).map(([catName, catProducts], idx) => (
-              <section className="section" key={catName}
-                style={{ background: idx % 2 === 0 ? 'var(--color-bg-secondary)' : 'transparent' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2xl)' }}>
-                  <div>
-                    <h2 style={{ fontSize: '1.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                      <span>{categoryIcons[catName] || '🛍️'}</span> {catName}
-                    </h2>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', marginTop: '4px' }}>{catProducts.length} sản phẩm</p>
-                  </div>
-                  <Link to={`/products?search=${encodeURIComponent(catName)}`} className="btn btn-secondary btn-sm">Xem tất cả →</Link>
+              <section className="section" key={catName}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{categoryIcons[catName] || '🛍️'}</span> {catName}
+                  </h2>
+                  <Link to={`/products?search=${encodeURIComponent(catName)}`} style={{ color: 'var(--color-primary)', fontSize: '0.9rem', marginRight: '16px' }}>Xem tất cả →</Link>
                 </div>
                 <div className="product-grid">
                   {catProducts.map((product) => (
@@ -98,18 +94,14 @@ function HomePage() {
                         <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
                       </div>
                       <div className="product-card-body">
-                        <div className="product-card-category">{product.category_name}</div>
                         <h3 className="product-card-name">{product.name}</h3>
                         <div className="product-card-rating">
                           <span className="stars">{renderStars(product.rating)}</span>
-                          <span>({product.num_reviews})</span>
+                          <span>(Đã bán {product.num_reviews})</span>
                         </div>
-                        <div className="product-card-footer">
-                          <div className="product-card-price">
-                              <span className="current">{formatVND(product.price)}</span>
-                              {product.compare_price && <span className="original">{formatVND(product.compare_price)}</span>}
-                          </div>
-                          <button className="btn btn-primary btn-sm">Xem</button>
+                        <div className="product-card-price">
+                            <span className="current">{formatVND(product.price)}</span>
+                            {product.compare_price && <span className="original">{formatVND(product.compare_price)}</span>}
                         </div>
                       </div>
                     </Link>
@@ -119,16 +111,14 @@ function HomePage() {
             ))
           )}
 
-          <section className="section" id="cta-section">
-            <div style={{ textAlign: 'center' }}>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: 'var(--space-md)' }}>
-                Sẵn sàng <span style={{ background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>mua sắm?</span>
-              </h2>
-              <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto var(--space-xl)' }}>
-                Tham gia cùng hàng ngàn khách hàng hài lòng và khám phá.
-              </p>
-              <Link to="/register" className="btn btn-accent btn-lg">Tạo tài khoản miễn phí →</Link>
-            </div>
+          <section className="section" id="cta-section" style={{ background: 'white', padding: '40px', borderRadius: '4px', textAlign: 'center', marginTop: '20px' }}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 500, marginBottom: '10px' }}>
+              Trải nghiệm mua sắm tuyệt vời cùng ShopVerse
+            </h2>
+            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
+              Tìm kiếm sản phẩm ưng ý với mức giá siêu ưu đãi ngay hôm nay.
+            </p>
+            <Link to="/register" className="btn btn-primary btn-lg" style={{ padding: '12px 30px', fontSize: '1.1rem' }}>Tham gia ngay</Link>
           </section>
         </main>
       </div>
