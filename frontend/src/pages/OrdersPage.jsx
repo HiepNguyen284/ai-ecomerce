@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
+import { formatVND } from '../utils/currency.js';
 
 function OrdersPage({ user }) {
   const [orders, setOrders] = useState([]);
@@ -54,10 +55,10 @@ function OrdersPage({ user }) {
                         <img src={item.product_image_url || 'https://placehold.co/50x50/1a1a2e/eee?text=SP'} alt={item.product_name} style={{ width: 50, height: 50, borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} />
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.product_name}</div>
-                          <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>SL: {item.quantity} × ${item.product_price}</div>
+                          <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>SL: {item.quantity} × {formatVND(item.product_price)}</div>
                         </div>
                       </div>
-                      <div style={{ fontWeight: 700 }}>${item.subtotal}</div>
+                      <div style={{ fontWeight: 700 }}>{formatVND(item.subtotal)}</div>
                     </div>
                   ))}
                 </div>
@@ -65,7 +66,7 @@ function OrdersPage({ user }) {
                   <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
                     {new Date(order.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>Tổng: <span style={{ color: 'var(--color-primary-light)' }}>${order.total_amount}</span></div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>Tổng: <span style={{ color: 'var(--color-primary-light)' }}>{formatVND(order.total_amount)}</span></div>
                 </div>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
+import { formatVND } from '../utils/currency.js';
 
 function CartPage({ user, setCartCount }) {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ function CartPage({ user, setCartCount }) {
                   <div className="cart-item-image"><img src={item.product_image_url || 'https://placehold.co/200x200/1a1a2e/eee?text=SP'} alt={item.product_name} /></div>
                   <div className="cart-item-info">
                     <h3>{item.product_name}</h3>
-                    <div className="price">${item.product_price}</div>
+                    <div className="price">{formatVND(item.product_price)}</div>
                     <div className="cart-item-actions">
                       <div className="quantity-control">
                         <button onClick={() => handleUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}>−</button>
@@ -86,7 +87,7 @@ function CartPage({ user, setCartCount }) {
                       <button className="btn btn-secondary btn-sm" onClick={() => handleRemoveItem(item.id)} style={{ color: 'var(--color-danger)' }}>Xóa</button>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>${item.subtotal}</div>
+                  <div style={{ fontWeight: 700, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>{formatVND(item.subtotal)}</div>
                 </div>
               ))}
             </div>
@@ -94,9 +95,9 @@ function CartPage({ user, setCartCount }) {
               {!showCheckout ? (
                 <>
                   <h3>Tóm tắt đơn hàng</h3>
-                  <div className="cart-summary-row"><span>Tạm tính</span><span>${cart.total_price}</span></div>
+                  <div className="cart-summary-row"><span>Tạm tính</span><span>{formatVND(cart.total_price)}</span></div>
                   <div className="cart-summary-row"><span>Phí vận chuyển</span><span style={{ color: 'var(--color-success)' }}>Miễn phí</span></div>
-                  <div className="cart-summary-row total"><span>Tổng cộng</span><span>${cart.total_price}</span></div>
+                  <div className="cart-summary-row total"><span>Tổng cộng</span><span>{formatVND(cart.total_price)}</span></div>
                   <button className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-lg)' }} onClick={() => setShowCheckout(true)} id="checkout-button">Tiến hành thanh toán →</button>
                 </>
               ) : (
@@ -107,7 +108,7 @@ function CartPage({ user, setCartCount }) {
                     <div className="form-group"><label>Số điện thoại</label><input type="tel" className="form-control" required value={orderForm.shipping_phone} onChange={(e) => setOrderForm({ ...orderForm, shipping_phone: e.target.value })} /></div>
                     <div className="form-group"><label>Địa chỉ</label><textarea className="form-control" rows="3" required value={orderForm.shipping_address} onChange={(e) => setOrderForm({ ...orderForm, shipping_address: e.target.value })} /></div>
                     <div className="form-group"><label>Ghi chú</label><input type="text" className="form-control" value={orderForm.note} onChange={(e) => setOrderForm({ ...orderForm, note: e.target.value })} /></div>
-                    <div className="cart-summary-row total"><span>Tổng cộng</span><span>${cart.total_price}</span></div>
+                    <div className="cart-summary-row total"><span>Tổng cộng</span><span>{formatVND(cart.total_price)}</span></div>
                     <button type="submit" className="btn btn-accent btn-lg" style={{ width: '100%', marginTop: 'var(--space-md)' }} disabled={submitting}>{submitting ? 'Đang xử lý...' : '💳 Đặt hàng (COD)'}</button>
                     <button type="button" className="btn btn-secondary" style={{ width: '100%', marginTop: 'var(--space-sm)' }} onClick={() => setShowCheckout(false)}>← Quay lại</button>
                   </form>

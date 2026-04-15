@@ -1,4 +1,6 @@
-from decimal import Decimal
+import random
+import re
+from decimal import Decimal, ROUND_HALF_UP
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 from apps.products.models import Category, Product
@@ -319,46 +321,236 @@ SEED_DATA = {
     },
 }
 
+VND_PRICE_RANGES = {
+    'Smartphones': (Decimal('5000000'), Decimal('45000000')),
+    'Laptops': (Decimal('12000000'), Decimal('80000000')),
+    'Audio': (Decimal('300000'), Decimal('25000000')),
+    'Clothing': (Decimal('150000'), Decimal('4000000')),
+    'Shoes': (Decimal('300000'), Decimal('7000000')),
+    'Home Appliances': (Decimal('800000'), Decimal('50000000')),
+    'Kitchen': (Decimal('100000'), Decimal('15000000')),
+    'Books': (Decimal('80000'), Decimal('700000')),
+    'Gaming': (Decimal('500000'), Decimal('50000000')),
+    'Watches': (Decimal('500000'), Decimal('45000000')),
+    'Sports & Fitness': (Decimal('150000'), Decimal('60000000')),
+    'Beauty & Care': (Decimal('90000'), Decimal('12000000')),
+}
+
+CATEGORY_IMAGE_KEYWORDS = {
+    'Smartphones': 'smartphone',
+    'Laptops': 'laptop',
+    'Audio': 'headphones',
+    'Clothing': 'fashion',
+    'Shoes': 'sneakers',
+    'Home Appliances': 'home-appliance',
+    'Kitchen': 'kitchen',
+    'Books': 'book',
+    'Gaming': 'gaming',
+    'Watches': 'watch',
+    'Sports & Fitness': 'fitness',
+    'Beauty & Care': 'skincare',
+}
+
+USD_TO_VND_RATE = Decimal('26000')
+THOUSAND = Decimal('1000')
+
+
+def _round_to_thousand(value):
+    rounded = (value / THOUSAND).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * THOUSAND
+    return rounded.quantize(Decimal('0.01'))
+
+
+def _slug_token(value):
+    token = re.sub(r'[^a-z0-9]+', '-', value.lower()).strip('-')
+    return token or 'product'
+
+
+def _to_decimal(value):
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
+
+
+def _clamp(value, min_value, max_value):
+    return max(min_value, min(max_value, value))
+
+
+def _price_to_vnd(category_name, usd_price, cycle, rng):
+    min_price, max_price = VND_PRICE_RANGES[category_name]
+    base_vnd = _to_decimal(usd_price) * USD_TO_VND_RATE
+    variation = Decimal(str(rng.uniform(0.87, 1.18))) * Decimal(str(1 + ((cycle - 1) * 0.01)))
+    adjusted = _round_to_thousand(base_vnd * variation)
+    return _clamp(adjusted, min_price, max_price)
+
+
+def _build_compare_price(price, category_name, rng):
+    min_price, max_price = VND_PRICE_RANGES[category_name]
+    markup = Decimal(str(rng.uniform(1.06, 1.28)))
+    compare_price = _round_to_thousand(price * markup)
+    compare_price = max(compare_price, price + THOUSAND)
+    return _clamp(compare_price, min_price, max_price)
+
+
+def _build_image_url(category_name, product_name, lock_id):
+    category_keyword = CATEGORY_IMAGE_KEYWORDS.get(category_name, 'product')
+    name_tokens = [_slug_token(t) for t in product_name.split()[:3]]
+    keywords = [category_keyword] + [t for t in name_tokens if t not in {'pro', 'max', 'plus'}]
+    deduped_keywords = []
+    for token in keywords:
+        if token and token not in deduped_keywords:
+            deduped_keywords.append(token)
+    keyword_string = ','.join(deduped_keywords[:3])
+    return f'https://loremflickr.com/1200/900/{keyword_string}?lock={lock_id}'
+
+
+def _build_category_image_url(category_name, lock_id):
+    keyword = CATEGORY_IMAGE_KEYWORDS.get(category_name, 'shopping')
+    return f'https://loremflickr.com/900/600/{keyword}?lock={lock_id}'
+
+
+def _build_stock(base_stock, cycle, rng):
+    scale = Decimal(str(rng.uniform(0.75, 1.45)))
+    stock = int((Decimal(str(base_stock)) * scale) + (cycle - 1) * rng.randint(2, 6))
+    return max(stock, 5)
+
+
+def _build_rating(base_rating, rng):
+    base = float(_to_decimal(base_rating))
+    rating = max(3.70, min(4.99, base + rng.uniform(-0.18, 0.16)))
+    return Decimal(f'{rating:.2f}')
+
+
+def _build_reviews(base_reviews, cycle, rng):
+    baseline = int(base_reviews * rng.uniform(0.28, 0.95))
+    growth = rng.randint(80, 340) * cycle
+    return max(20, baseline + growth)
+
+
+def _build_slug(name, cycle):
+    if cycle == 1:
+        return slugify(name)
+    return f'{slugify(name)}-vn-{cycle}'
+
+
+def _variant_name(template_name, cycle):
+    if cycle == 1:
+        return template_name
+    return f'{template_name} Vietnam Edition {cycle}'
+
+
+def _variant_description(template_description, cycle):
+    if cycle == 1:
+        return (
+            f'{template_description} Official Vietnam market pricing, '
+            'genuine warranty, and nationwide delivery support.'
+        )
+    return (
+        f'{template_description} Vietnam market variant {cycle} with optimized '
+        'pricing, genuine warranty, and fast nationwide delivery.'
+    )
+
 
 class Command(BaseCommand):
-    help = 'Seed the database with initial product data (12 categories, 24 products)'
+    help = 'Seed product catalog with Vietnam pricing and image URLs (default: 240 products).'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--per-category',
+            type=int,
+            default=20,
+            help='How many products to maintain in each category (default: 20, total: 240).',
+        )
+        parser.add_argument(
+            '--seed',
+            type=int,
+            default=2026,
+            help='Random seed for deterministic catalog generation.',
+        )
 
     def handle(self, *args, **options):
-        if Product.objects.exists():
-            self.stdout.write(self.style.WARNING('Products already exist. Skipping seed.'))
-            return
+        per_category = max(1, options['per_category'])
+        rng = random.Random(options['seed'])
+        target_total = per_category * len(SEED_DATA)
 
-        self.stdout.write('Seeding categories and products...')
-        total_products = 0
+        self.stdout.write(
+            f'Seeding product catalog with Vietnam pricing ({per_category} items/category, target {target_total} products)...'
+        )
 
-        for category_name, cat_data in SEED_DATA.items():
-            category, _ = Category.objects.get_or_create(
+        created_count = 0
+        updated_count = 0
+
+        for category_index, (category_name, cat_data) in enumerate(SEED_DATA.items(), start=1):
+            category_defaults = {
+                'description': cat_data['description'],
+                'image_url': _build_category_image_url(category_name, 7000 + category_index),
+            }
+            category, category_created = Category.objects.get_or_create(
                 name=category_name,
-                defaults={
-                    'description': cat_data['description'],
-                    'image_url': f'https://placehold.co/400x300/1a1a2e/fff?text={category_name.replace(" ", "+")}'
-                }
+                defaults=category_defaults,
             )
+
+            if not category_created:
+                category_changed = False
+                if category.description != cat_data['description']:
+                    category.description = cat_data['description']
+                    category_changed = True
+                expected_category_image = _build_category_image_url(category_name, 7000 + category_index)
+                if category.image_url != expected_category_image:
+                    category.image_url = expected_category_image
+                    category_changed = True
+                if category_changed:
+                    category.save(update_fields=['description', 'image_url'])
+
             self.stdout.write(f'  Category: {category_name}')
 
-            for product_data in cat_data['products']:
-                slug = slugify(product_data['name'])
-                Product.objects.create(
-                    name=product_data['name'],
-                    slug=slug,
-                    description=product_data['description'],
-                    price=product_data['price'],
-                    compare_price=product_data.get('compare_price'),
-                    category=category,
-                    image_url=product_data.get('image_url', ''),
-                    stock=product_data['stock'],
-                    rating=product_data.get('rating', Decimal('0.00')),
-                    num_reviews=product_data.get('num_reviews', 0),
-                    is_active=True,
-                )
-                total_products += 1
-                self.stdout.write(f'    + {product_data["name"]}')
+            templates = cat_data['products']
+            for i in range(per_category):
+                template = templates[i % len(templates)]
+                cycle = (i // len(templates)) + 1
+                lock_id = (category_index * 1000) + i + 1
 
-        self.stdout.write(self.style.SUCCESS(
-            f'Successfully seeded {total_products} products in {len(SEED_DATA)} categories.'
-        ))
+                name = _variant_name(template['name'], cycle)
+                slug = _build_slug(template['name'], cycle)
+                description = _variant_description(template['description'], cycle)
+
+                price = _price_to_vnd(category_name, template['price'], cycle, rng)
+                compare_price = _build_compare_price(price, category_name, rng)
+                stock = _build_stock(template['stock'], cycle, rng)
+                rating = _build_rating(template.get('rating', Decimal('4.20')), rng)
+                num_reviews = _build_reviews(template.get('num_reviews', 120), cycle, rng)
+                image_url = _build_image_url(category_name, name, lock_id)
+
+                product_defaults = {
+                    'name': name,
+                    'description': description,
+                    'price': price,
+                    'compare_price': compare_price,
+                    'category': category,
+                    'image_url': image_url,
+                    'stock': stock,
+                    'rating': rating,
+                    'num_reviews': num_reviews,
+                    'is_active': True,
+                }
+
+                product, created = Product.objects.get_or_create(slug=slug, defaults=product_defaults)
+                if created:
+                    created_count += 1
+                    self.stdout.write(f'    + Created: {name}')
+                    continue
+
+                update_fields = []
+                for field_name, expected_value in product_defaults.items():
+                    if getattr(product, field_name) != expected_value:
+                        setattr(product, field_name, expected_value)
+                        update_fields.append(field_name)
+
+                if update_fields:
+                    product.save(update_fields=update_fields)
+                    updated_count += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Seeding complete. Target {target_total} products, created {created_count}, updated {updated_count}.'
+            )
+        )

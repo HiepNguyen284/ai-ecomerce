@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
+import { formatVND } from '../utils/currency.js';
 
 function HomePage() {
   const [products, setProducts] = useState([]);
@@ -17,7 +18,7 @@ function HomePage() {
     async function fetchData() {
       try {
         const [prodData, catData] = await Promise.allSettled([
-          api.getProducts('page_size=50'),
+          api.getProducts('page_size=300'),
           api.getCategories(),
         ]);
         if (prodData.status === 'fulfilled') setProducts(normalizeList(prodData.value));
@@ -115,8 +116,8 @@ function HomePage() {
                       </div>
                       <div className="product-card-footer">
                         <div className="product-card-price">
-                          <span className="current">${product.price}</span>
-                          {product.compare_price && <span className="original">${product.compare_price}</span>}
+                            <span className="current">{formatVND(product.price)}</span>
+                            {product.compare_price && <span className="original">{formatVND(product.compare_price)}</span>}
                         </div>
                         <button className="btn btn-primary btn-sm">Xem</button>
                       </div>

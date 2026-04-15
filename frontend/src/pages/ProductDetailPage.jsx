@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
+import { formatVND } from '../utils/currency.js';
 
 function ProductDetailPage({ setCartCount }) {
   const { slug } = useParams();
@@ -49,10 +50,10 @@ function ProductDetailPage({ setCartCount }) {
               <span>{product.rating} ({product.num_reviews} đánh giá)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--color-text-bright)' }}>${product.price}</span>
+              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--color-text-bright)' }}>{formatVND(product.price)}</span>
               {product.compare_price && (
                 <>
-                  <span style={{ fontSize: '1.2rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>${product.compare_price}</span>
+                  <span style={{ fontSize: '1.2rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>{formatVND(product.compare_price)}</span>
                   {product.discount_percent > 0 && (
                     <span style={{ padding: '0.3rem 0.8rem', background: 'rgba(255, 71, 87, 0.15)', color: 'var(--color-danger)', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', fontWeight: 700 }}>
                       Tiết kiệm {product.discount_percent}%

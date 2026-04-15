@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
+import { formatVND } from '../utils/currency.js';
 
 function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -23,6 +24,7 @@ function ProductsPage() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
+    params.set('page_size', '300');
     if (search) params.set('search', search);
     if (selectedCategory) params.set('category', selectedCategory);
     if (ordering) params.set('ordering', ordering);
@@ -81,8 +83,8 @@ function ProductsPage() {
                   </div>
                   <div className="product-card-footer">
                     <div className="product-card-price">
-                      <span className="current">${product.price}</span>
-                      {product.compare_price && <span className="original">${product.compare_price}</span>}
+                      <span className="current">{formatVND(product.price)}</span>
+                      {product.compare_price && <span className="original">{formatVND(product.compare_price)}</span>}
                     </div>
                     <button className="btn btn-primary btn-sm">Xem</button>
                   </div>

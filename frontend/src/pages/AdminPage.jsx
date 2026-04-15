@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api.js';
+import { formatVND } from '../utils/currency.js';
 
 function AdminPage({ user }) {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ function AdminPage({ user }) {
     setLoading(true);
     try {
       const [prodData, orderData] = await Promise.allSettled([
-        api.getProducts('page_size=100'),
+        api.getProducts('page_size=300'),
         api.getOrders(),
       ]);
 
@@ -34,7 +35,7 @@ function AdminPage({ user }) {
         products: prods.length,
         orders: ords.length,
         users: new Set(ords.map(o => o.user_id)).size || 0,
-        revenue: totalRevenue.toFixed(2),
+        revenue: totalRevenue,
       });
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -94,7 +95,7 @@ function DashboardTab({ stats, orders }) {
     { label: 'Tổng sản phẩm', value: stats.products, icon: '📦', color: '#6c63ff' },
     { label: 'Tổng đơn hàng', value: stats.orders, icon: '🛒', color: '#00d2ff' },
     { label: 'Khách hàng', value: stats.users, icon: '👥', color: '#ff6b9d' },
-    { label: 'Doanh thu', value: `$${stats.revenue}`, icon: '💰', color: '#00c9a7' },
+    { label: 'Doanh thu', value: formatVND(stats.revenue), icon: '💰', color: '#00c9a7' },
   ];
 
   const recentOrders = orders.slice(0, 5);
@@ -135,7 +136,7 @@ function DashboardTab({ stats, orders }) {
                 <tr key={o.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <td style={tdStyle}><code>{o.id.slice(0, 8)}</code></td>
                   <td style={tdStyle}>{new Date(o.created_at).toLocaleDateString('vi-VN')}</td>
-                  <td style={tdStyle}><strong>${o.total_amount}</strong></td>
+                  <td style={tdStyle}><strong>{formatVND(o.total_amount)}</strong></td>
                   <td style={tdStyle}>
                     <span style={{ padding: '0.25rem 0.6rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: 'rgba(108,99,255,0.1)', color: 'var(--color-primary-light)' }}>
                       {o.status}
@@ -190,8 +191,8 @@ function ProductsTab({ products }) {
                 </td>
                 <td style={tdStyle}><span style={{ padding: '0.2rem 0.6rem', background: 'rgba(108,99,255,0.1)', borderRadius: '12px', fontSize: '0.82rem', color: 'var(--color-primary-light)' }}>{p.category_name}</span></td>
                 <td style={tdStyle}>
-                  <strong>${p.price}</strong>
-                  {p.compare_price && <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>${p.compare_price}</div>}
+                  <strong>{formatVND(p.price)}</strong>
+                  {p.compare_price && <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>{formatVND(p.compare_price)}</div>}
                 </td>
                 <td style={tdStyle}>
                   <span style={{ color: p.stock > 10 ? 'var(--color-success)' : p.stock > 0 ? 'var(--color-warning)' : 'var(--color-danger)', fontWeight: 600 }}>{p.stock}</span>
@@ -235,7 +236,7 @@ function OrdersTab({ orders, statusMap, statusColors }) {
                     <div key={i.id} style={{ fontSize: '0.82rem' }}>{i.product_name} x{i.quantity}</div>
                   ))}
                 </td>
-                <td style={tdStyle}><strong style={{ color: 'var(--color-primary-light)' }}>${o.total_amount}</strong></td>
+                <td style={tdStyle}><strong style={{ color: 'var(--color-primary-light)' }}>{formatVND(o.total_amount)}</strong></td>
                 <td style={tdStyle}>
                   <span style={{ padding: '0.25rem 0.6rem', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: `${statusColors[o.status] || '#6c63ff'}20`, color: statusColors[o.status] || '#6c63ff' }}>
                     {statusMap[o.status] || o.status}
@@ -301,7 +302,7 @@ function CustomersTab({ orders }) {
                 <td style={tdStyle}>{c.phone || '-'}</td>
                 <td style={tdStyle}><div style={{ fontSize: '0.82rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address || '-'}</div></td>
                 <td style={tdStyle}><span style={{ fontWeight: 600 }}>{c.orderCount}</span></td>
-                <td style={tdStyle}><strong style={{ color: 'var(--color-success)' }}>${c.totalSpent.toFixed(2)}</strong></td>
+                <td style={tdStyle}><strong style={{ color: 'var(--color-success)' }}>{formatVND(c.totalSpent)}</strong></td>
               </tr>
             ))}
           </tbody>

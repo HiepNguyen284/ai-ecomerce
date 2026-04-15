@@ -56,7 +56,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5444:5432"
     networks:
       - ecommerce-network
     restart: unless-stopped
