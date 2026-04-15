@@ -185,16 +185,25 @@ class GetRecommendations(APIView):
             preferences, categories, all_products, max_products=20
         )
 
+        # Re-query preferences for analysis (the queryset may have been
+        # consumed/iterated by the engine above)
+        pref_qs = CategoryPreference.objects.filter(
+            session_id=session_id
+        ).select_related('category').order_by('-score')
+
         # Build analysis info
         total_views = (
-            preferences.aggregate(total=Sum('view_count'))['total'] or 0
+            pref_qs.aggregate(total=Sum('view_count'))['total'] or 0
         )
         top_cats = list(
-            preferences[:5].values_list('category__name', flat=True)
+            pref_qs.order_by('-view_count')[:5].values_list(
+                'category__name', flat=True
+            )
         )
+        pref_count = pref_qs.count()
 
         analysis = {
-            'type': 'personalized' if preferences.exists() else 'popular',
+            'type': 'personalized' if pref_count > 0 else 'popular',
             'total_views': total_views,
             'top_categories': top_cats,
             'model_trained': (
@@ -204,8 +213,8 @@ class GetRecommendations(APIView):
             ),
             'message': (
                 f'Recommendations based on {total_views} product views '
-                f'across {preferences.count()} categories'
-                if preferences.exists()
+                f'across {pref_count} categories'
+                if pref_count > 0
                 else 'Showing popular products'
             ),
         }
@@ -215,7 +224,7 @@ class GetRecommendations(APIView):
                 recommended, many=True
             ).data,
             'category_preferences': CategoryPreferenceSerializer(
-                preferences[:10], many=True
+                pref_qs[:10], many=True
             ).data,
             'analysis': analysis,
         })

@@ -20,6 +20,12 @@ import os
 from datetime import datetime, timedelta
 from collections import defaultdict
 
+try:
+    from django.utils import timezone as dj_tz
+    _now = dj_tz.now
+except ImportError:
+    _now = datetime.now
+
 # Model weights storage path
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'model_weights')
 
@@ -148,7 +154,7 @@ class RecommendationModel:
             return np.zeros((1, self.embedding_dim + 2))
 
         features = []
-        now = datetime.now()
+        now = _now()
 
         for cv in category_views:
             # Get category embedding
@@ -161,7 +167,14 @@ class RecommendationModel:
 
             # Recency score: exponential decay based on time since last view
             if cv.get('last_viewed'):
-                hours_ago = max((now - cv['last_viewed']).total_seconds() / 3600, 0)
+                last_viewed = cv['last_viewed']
+                # Ensure both are timezone-aware or both naive
+                if hasattr(last_viewed, 'tzinfo') and last_viewed.tzinfo and not now.tzinfo:
+                    hours_ago = max((now.replace(tzinfo=last_viewed.tzinfo) - last_viewed).total_seconds() / 3600, 0)
+                elif hasattr(now, 'tzinfo') and now.tzinfo and (not hasattr(last_viewed, 'tzinfo') or not last_viewed.tzinfo):
+                    hours_ago = 0
+                else:
+                    hours_ago = max((now - last_viewed).total_seconds() / 3600, 0)
                 recency = np.exp(-0.05 * hours_ago)  # half-life ~14 hours
             else:
                 recency = 0.5
