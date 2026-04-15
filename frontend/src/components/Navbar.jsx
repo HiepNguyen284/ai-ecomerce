@@ -7,13 +7,14 @@ function Navbar({ user, cartCount, onLogout }) {
         <Link to="/" className="navbar-brand">✦ ShopVerse</Link>
 
         <ul className="navbar-nav">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/products">Products</Link></li>
-          {user && <li><Link to="/orders">Orders</Link></li>}
+          <li><Link to="/">Trang chủ</Link></li>
+          <li><Link to="/products">Sản phẩm</Link></li>
+          {user && <li><Link to="/orders">Đơn hàng</Link></li>}
+          {user && user.is_staff && <li><Link to="/admin" style={{ color: 'var(--color-accent)' }}>⚙ Quản trị</Link></li>}
         </ul>
 
         <div className="navbar-actions">
-          <Link to="/cart" className="btn-icon" title="Cart" id="cart-button">
+          <Link to="/cart" className="btn-icon" title="Giỏ hàng" id="cart-button" style={{ position: 'relative' }}>
             🛒 {cartCount > 0 && <span style={{
               position: 'absolute', top: '-4px', right: '-4px',
               background: 'var(--color-accent)', color: 'white',
@@ -26,15 +27,15 @@ function Navbar({ user, cartCount, onLogout }) {
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-                Hi, {user.first_name || user.username}
+                Xin chào, {user.first_name || user.username}
               </span>
               <button className="btn btn-secondary btn-sm" onClick={onLogout} id="logout-button">
-                Logout
+                Đăng xuất
               </button>
             </div>
           ) : (
             <Link to="/login" className="btn btn-primary btn-sm" id="login-button">
-              Sign In
+              Đăng nhập
             </Link>
           )}
         </div>

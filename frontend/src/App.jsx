@@ -9,6 +9,7 @@ import CartPage from './pages/CartPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -18,12 +19,8 @@ function App() {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
+      try { setUser(JSON.parse(savedUser)); }
+      catch { localStorage.removeItem('token'); localStorage.removeItem('user'); }
     }
   }, []);
 
@@ -53,6 +50,7 @@ function App() {
             <Route path="/orders" element={<OrdersPage user={user} />} />
             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
             <Route path="/register" element={<RegisterPage onLogin={handleLogin} />} />
+            <Route path="/admin" element={<AdminPage user={user} />} />
           </Routes>
         </main>
         <Footer />
