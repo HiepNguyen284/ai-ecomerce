@@ -7,6 +7,12 @@ function HomePage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const normalizeList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.results)) return payload.results;
+    return [];
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -14,8 +20,8 @@ function HomePage() {
           api.getProducts('page_size=50'),
           api.getCategories(),
         ]);
-        if (prodData.status === 'fulfilled') setProducts(prodData.value.results || prodData.value || []);
-        if (catData.status === 'fulfilled') setCategories(catData.value || []);
+        if (prodData.status === 'fulfilled') setProducts(normalizeList(prodData.value));
+        if (catData.status === 'fulfilled') setCategories(normalizeList(catData.value));
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     }
@@ -98,7 +104,7 @@ function HomePage() {
                   <Link to={`/products/${product.slug}`} key={product.id} className="product-card">
                     {product.discount_percent > 0 && <div className="product-card-badge">-{product.discount_percent}%</div>}
                     <div className="product-card-image">
-                      <img src={product.image_url || `https://placehold.co/600x400/1a1a2e/eee?text=${encodeURIComponent(product.name)}`} alt={product.name} />
+                      <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
                     </div>
                     <div className="product-card-body">
                       <div className="product-card-category">{product.category_name}</div>

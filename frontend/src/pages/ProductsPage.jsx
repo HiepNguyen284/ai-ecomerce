@@ -10,7 +10,15 @@ function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [ordering, setOrdering] = useState('-created_at');
 
-  useEffect(() => { api.getCategories().then(setCategories).catch(console.error); }, []);
+  const normalizeList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.results)) return payload.results;
+    return [];
+  };
+
+  useEffect(() => {
+    api.getCategories().then((data) => setCategories(normalizeList(data))).catch(console.error);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -19,7 +27,7 @@ function ProductsPage() {
     if (selectedCategory) params.set('category', selectedCategory);
     if (ordering) params.set('ordering', ordering);
     api.getProducts(params.toString())
-      .then((data) => setProducts(data.results || data || []))
+      .then((data) => setProducts(normalizeList(data)))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [search, selectedCategory, ordering]);
@@ -62,7 +70,7 @@ function ProductsPage() {
               <Link to={`/products/${product.slug}`} key={product.id} className="product-card">
                 {product.discount_percent > 0 && <div className="product-card-badge">-{product.discount_percent}%</div>}
                 <div className="product-card-image">
-                  <img src={product.image_url || `https://placehold.co/600x400/1a1a2e/eee?text=${encodeURIComponent(product.name)}`} alt={product.name} />
+                  <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
                 </div>
                 <div className="product-card-body">
                   <div className="product-card-category">{product.category_name}</div>

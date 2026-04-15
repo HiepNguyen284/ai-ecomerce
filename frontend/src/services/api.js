@@ -20,9 +20,27 @@ class ApiService {
 
   async request(url, options = {}) {
     const response = await fetch(url, options);
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
+    let data = null;
+    if (response.status !== 204) {
+      if (isJson) {
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
+      } else {
+        data = await response.text();
+      }
+    }
+
     if (!response.ok) {
-      throw { status: response.status, ...data };
+      const errorData = data && typeof data === 'object'
+        ? data
+        : { error: typeof data === 'string' && data ? data : 'Request failed' };
+      throw { status: response.status, ...errorData };
     }
     return data;
   }

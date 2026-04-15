@@ -8,7 +8,7 @@ services:
     image: caddy:2-alpine
     container_name: ecommerce-gateway
     ports:
-      - "80:80"
+      - "8080:80"
       - "443:443"
     volumes:
       - ./gateway/Caddyfile:/etc/caddy/Caddyfile
@@ -37,7 +37,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_BASE_URL=http://localhost/api
+      - VITE_API_BASE_URL=/api
     networks:
       - ecommerce-network
     restart: unless-stopped
@@ -128,8 +128,8 @@ services:
     container_name: ecommerce-cart-service
     environment:
       - DATABASE_NAME=cart_db
-      - DATABASE_USER=ecommerce_admin
-      - DATABASE_PASSWORD=ecommerce_secret_2026
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
       - DATABASE_HOST=ecommerce-db
       - DATABASE_PORT=5432
       - SECRET_KEY=django-cart-secret-key-2026-ecommerce
@@ -156,8 +156,8 @@ services:
     container_name: ecommerce-order-service
     environment:
       - DATABASE_NAME=order_db
-      - DATABASE_USER=ecommerce_admin
-      - DATABASE_PASSWORD=ecommerce_secret_2026
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
       - DATABASE_HOST=ecommerce-db
       - DATABASE_PORT=5432
       - SECRET_KEY=django-order-secret-key-2026-ecommerce
@@ -186,8 +186,8 @@ services:
     container_name: ecommerce-payment-service
     environment:
       - DATABASE_NAME=payment_db
-      - DATABASE_USER=ecommerce_admin
-      - DATABASE_PASSWORD=ecommerce_secret_2026
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
       - DATABASE_HOST=ecommerce-db
       - DATABASE_PORT=5432
       - SECRET_KEY=django-payment-secret-key-2026-ecommerce

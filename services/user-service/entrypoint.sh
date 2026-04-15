@@ -4,6 +4,9 @@ set -e
 echo "Waiting for database..."
 python manage.py waitdb
 
+echo "Making migrations..."
+python manage.py makemigrations --noinput
+
 echo "Applying migrations..."
 python manage.py migrate --noinput
 

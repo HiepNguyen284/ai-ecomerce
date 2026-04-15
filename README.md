@@ -59,7 +59,7 @@ ai-ecomerce/
 docker-compose up --build
 
 # Access the app
-open http://localhost
+open http://localhost:8080
 ```
 
 ## 📡 API Endpoints

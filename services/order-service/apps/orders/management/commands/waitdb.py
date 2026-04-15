@@ -9,19 +9,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('Waiting for database...')
-        db_conn = None
-        max_retries = 30
+        max_retries = 60
         retry_count = 0
-        while not db_conn and retry_count < max_retries:
+        while retry_count < max_retries:
             try:
-                db_conn = connections['default']
-                db_conn.ensure_connection()
+                conn = connections['default']
+                conn.ensure_connection()
+                self.stdout.write(self.style.SUCCESS('Database available!'))
+                return
             except OperationalError:
                 retry_count += 1
-                self.stdout.write(f'Database unavailable, waiting 1 second... ({retry_count}/{max_retries})')
-                time.sleep(1)
-                db_conn = None
-        if db_conn:
-            self.stdout.write(self.style.SUCCESS('Database available!'))
-        else:
-            raise OperationalError('Could not connect to database')
+                self.stdout.write(f'Database unavailable, waiting 2 seconds... ({retry_count}/{max_retries})')
+                time.sleep(2)
+                connections.close_all()
+        raise OperationalError('Could not connect to database after max retries')

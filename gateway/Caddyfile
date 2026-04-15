@@ -1,9 +1,4 @@
 :80 {
-    # Frontend
-    handle /* {
-        reverse_proxy frontend:5173
-    }
-
     # API Gateway - User Service
     handle /api/users/* {
         uri strip_prefix /api
@@ -37,6 +32,11 @@
     # Health check endpoint
     handle /health {
         respond "OK" 200
+    }
+
+    # Frontend (must be last so /api/* is routed to services first)
+    handle /* {
+        reverse_proxy frontend:5173
     }
 
     log {
