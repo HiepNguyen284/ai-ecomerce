@@ -49,8 +49,8 @@ services:
     image: postgres:17-alpine
     container_name: ecommerce-db
     environment:
-      POSTGRES_USER: ecommerce_admin
-      POSTGRES_PASSWORD: ecommerce_secret_2026
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -61,7 +61,7 @@ services:
       - ecommerce-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ecommerce_admin"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,8 +76,8 @@ services:
     container_name: ecommerce-user-service
     environment:
       - DATABASE_NAME=user_db
-      - DATABASE_USER=ecommerce_admin
-      - DATABASE_PASSWORD=ecommerce_secret_2026
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
       - DATABASE_HOST=ecommerce-db
       - DATABASE_PORT=5432
       - SECRET_KEY=django-user-secret-key-2026-ecommerce
@@ -102,8 +102,8 @@ services:
     container_name: ecommerce-product-service
     environment:
       - DATABASE_NAME=product_db
-      - DATABASE_USER=ecommerce_admin
-      - DATABASE_PASSWORD=ecommerce_secret_2026
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
       - DATABASE_HOST=ecommerce-db
       - DATABASE_PORT=5432
       - SECRET_KEY=django-product-secret-key-2026-ecommerce

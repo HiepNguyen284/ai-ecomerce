@@ -54,8 +54,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DATABASE_NAME', 'cart_db'),
-        'USER': os.environ.get('DATABASE_USER', 'ecommerce_admin'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'ecommerce_secret_2026'),
+        'USER': os.environ.get('DATABASE_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'postgres'),
         'HOST': os.environ.get('DATABASE_HOST', 'ecommerce-db'),
         'PORT': os.environ.get('DATABASE_PORT', '5432'),
     }
