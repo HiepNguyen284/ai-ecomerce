@@ -54,9 +54,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DATABASE_NAME', 'user_db'),
-        'USER': os.environ.get('DATABASE_USER', 'user_admin'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'user_secret_2026'),
-        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),
+        'USER': os.environ.get('DATABASE_USER', 'ecommerce_admin'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'ecommerce_secret_2026'),
+        'HOST': os.environ.get('DATABASE_HOST', 'ecommerce-db'),
         'PORT': os.environ.get('DATABASE_PORT', '5432'),
     }
 }
