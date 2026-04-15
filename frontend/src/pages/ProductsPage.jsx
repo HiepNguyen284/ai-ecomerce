@@ -1,14 +1,15 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatVND } from '../utils/currency.js';
 
 function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [ordering, setOrdering] = useState('-created_at');
 
   const normalizeList = (payload) => {
@@ -20,6 +21,22 @@ function ProductsPage() {
   useEffect(() => {
     api.getCategories().then((data) => setCategories(normalizeList(data))).catch(console.error);
   }, []);
+
+  // Sync URL params → state when URL changes (e.g. navigating from HomePage)
+  useEffect(() => {
+    const urlCat = searchParams.get('category') || '';
+    const urlSearch = searchParams.get('search') || '';
+    if (urlCat !== selectedCategory) setSelectedCategory(urlCat);
+    if (urlSearch !== search) setSearch(urlSearch);
+  }, [searchParams]);
+
+  // Sync state → URL when filters change
+  useEffect(() => {
+    const newParams = new URLSearchParams();
+    if (selectedCategory) newParams.set('category', selectedCategory);
+    if (search) newParams.set('search', search);
+    setSearchParams(newParams, { replace: true });
+  }, [selectedCategory, search]);
 
   useEffect(() => {
     setLoading(true);
@@ -121,7 +138,8 @@ function ProductsPage() {
                   <Link to={`/products/${product.slug}`} key={product.id} className="product-card">
                     {product.discount_percent > 0 && <div className="product-card-badge">-{product.discount_percent}%</div>}
                     <div className="product-card-image">
-                      <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
+                      <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name}
+                        onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`; }} />
                     </div>
                     <div className="product-card-body">
                       <div className="product-card-category">{product.category_name}</div>

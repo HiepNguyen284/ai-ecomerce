@@ -3,7 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-chatbot-service-dev-key')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-analytics-service-dev-key')
 DEBUG = int(os.environ.get('DEBUG', 0))
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
@@ -16,7 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'apps.chat',
+    'apps.analytics',
 ]
 
 MIDDLEWARE = [
@@ -30,7 +30,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'chatbot_service.urls'
+ROOT_URLCONF = 'analytics_service.urls'
 
 TEMPLATES = [
     {
@@ -48,12 +48,12 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'chatbot_service.wsgi.application'
+WSGI_APPLICATION = 'analytics_service.wsgi.application'
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DATABASE_NAME', 'chatbot_db'),
+        'NAME': os.environ.get('DATABASE_NAME', 'analytics_db'),
         'USER': os.environ.get('DATABASE_USER', 'postgres'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'postgres'),
         'HOST': os.environ.get('DATABASE_HOST', 'ecommerce-db'),
@@ -65,21 +65,22 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Inter-service URLs
-PRODUCT_SERVICE_URL = os.environ.get('PRODUCT_SERVICE_URL', 'http://product-service:8000')
 USER_SERVICE_URL = os.environ.get('USER_SERVICE_URL', 'http://user-service:8000')
+PRODUCT_SERVICE_URL = os.environ.get('PRODUCT_SERVICE_URL', 'http://product-service:8000')
+ORDER_SERVICE_URL = os.environ.get('ORDER_SERVICE_URL', 'http://order-service:8000')
+CART_SERVICE_URL = os.environ.get('CART_SERVICE_URL', 'http://cart-service:8000')
+PAYMENT_SERVICE_URL = os.environ.get('PAYMENT_SERVICE_URL', 'http://payment-service:8000')
 
-# Google Gemini API Key
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-
-# Neo4j settings
-NEO4J_URI = os.environ.get('NEO4J_URI', 'bolt://localhost:7687')
-NEO4J_USER = os.environ.get('NEO4J_USER', 'neo4j')
-NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD', 'password')
+# ML Model paths
+ML_MODELS_DIR = BASE_DIR / 'ml_models'
+ML_MODELS_DIR.mkdir(exist_ok=True)
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Ho_Chi_Minh'

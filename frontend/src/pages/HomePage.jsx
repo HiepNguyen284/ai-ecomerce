@@ -31,9 +31,9 @@ function HomePage() {
 
   const categoryIcons = {
     'Điện thoại': '📱', 'Laptop': '💻', 'Âm thanh': '🎧',
-    'Thời trang': '👕', 'Giày dép': '👟', 'Gia dụng': '🏠',
-    'Nhà bếp': '🍳', 'Sách': '📚', 'Gaming': '🎮',
-    'Đồng hồ': '⌚', 'Thể thao & Fitness': '🏋️', 'Làm đẹp': '💄',
+    'Quần': '👖', 'Áo': '👕', 'Giầy': '👟',
+    'Đồ gia dụng': '🏠', 'Sách': '📚', 'Đồng hồ': '⌚',
+    'Ô tô': '🚗', 'Mỹ phẩm': '💄', 'Túi xách': '👜',
   };
 
   const renderStars = (rating) => '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
@@ -124,14 +124,15 @@ function HomePage() {
                     <span className="section-title-icon">{categoryIcons[catName] || '🛍️'}</span>
                     {catName}
                   </h2>
-                  <Link to={`/products?search=${encodeURIComponent(catName)}`} className="section-view-all">Xem tất cả →</Link>
+                  <Link to={`/products?category=${categories.find(c => c.name === catName)?.id || ''}`} className="section-view-all">Xem tất cả →</Link>
                 </div>
                 <div className="product-grid">
                   {catProducts.map((product) => (
                     <Link to={`/products/${product.slug}`} key={product.id} className="product-card">
                       {product.discount_percent > 0 && <div className="product-card-badge">-{product.discount_percent}%</div>}
                       <div className="product-card-image">
-                        <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
+                        <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name}
+                          onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`; }} />
                       </div>
                       <div className="product-card-body">
                         <h3 className="product-card-name">{product.name}</h3>

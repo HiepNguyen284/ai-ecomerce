@@ -21,6 +21,7 @@ services:
       - order-service
       - payment-service
       - chatbot-service
+      - analytics-service
       - frontend
     networks:
       - ecommerce-network
@@ -226,18 +227,75 @@ services:
       - PRODUCT_SERVICE_URL=http://product-service:8000
       - USER_SERVICE_URL=http://user-service:8000
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - CHROMA_DB_PATH=/app/chroma_data
+      - NEO4J_URI=bolt://neo4j-db:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=password
     volumes:
       - ./services/chatbot-service:/app
-      - chatbot_chroma_data:/app/chroma_data
     depends_on:
       ecommerce-db:
+        condition: service_healthy
+      neo4j-db:
         condition: service_healthy
       product-service:
         condition: service_started
     networks:
       - ecommerce-network
     restart: unless-stopped
+
+  # ========================
+  # Analytics Service (Deep Learning)
+  # ========================
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-analytics-service
+    environment:
+      - DATABASE_NAME=analytics_db
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_HOST=ecommerce-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-analytics-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+      - USER_SERVICE_URL=http://user-service:8000
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - CART_SERVICE_URL=http://cart-service:8000
+      - PAYMENT_SERVICE_URL=http://payment-service:8000
+    volumes:
+      - ./services/analytics-service:/app
+      - analytics_models:/app/ml_models
+    depends_on:
+      ecommerce-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # Neo4j Graph Database
+  # ========================
+  neo4j-db:
+    image: neo4j:5
+    container_name: ecommerce-neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 # ========================
 # Volumes
@@ -246,7 +304,8 @@ volumes:
   caddy_data:
   caddy_config:
   postgres_data:
-  chatbot_chroma_data:
+  neo4j_data:
+  analytics_models:
 
 # ========================
 # Networks

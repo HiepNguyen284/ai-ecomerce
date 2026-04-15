@@ -10,12 +10,17 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
+import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import ChatWidget from './components/ChatWidget.jsx';
 import api from './services/api.js';
 
 function AppContent({ user, setUser, cartCount, setCartCount, authReady, handleLogout }) {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/analytics');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <div className="app">
@@ -38,6 +43,7 @@ function AppContent({ user, setUser, cartCount, setCartCount, authReady, handleL
             setUser(userData);
           }} />} />
           <Route path="/admin" element={<AdminPage user={user} authReady={authReady} onLogout={handleLogout} />} />
+          <Route path="/analytics" element={<AnalyticsPage user={user} authReady={authReady} />} />
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}

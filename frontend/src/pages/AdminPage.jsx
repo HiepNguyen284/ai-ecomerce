@@ -506,6 +506,10 @@ function AdminPage({ user, authReady = true, onLogout }) {
         </nav>
 
         <div className="admin-sidebar-footer">
+          <Link to="/analytics" className="admin-sidebar-item" title="AI Analytics" style={{ color: '#6366f1' }}>
+            <span className="admin-sidebar-icon">🧠</span>
+            {!sidebarCollapsed && <span className="admin-sidebar-label">AI Analytics</span>}
+          </Link>
           <button className="admin-sidebar-item" onClick={loadAdminData} title="Làm mới">
             <span className="admin-sidebar-icon">🔄</span>
             {!sidebarCollapsed && <span className="admin-sidebar-label">Làm mới dữ liệu</span>}

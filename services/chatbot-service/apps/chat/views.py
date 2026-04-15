@@ -76,24 +76,7 @@ class ChatView(APIView):
         products_data = []
         if product_ids:
             try:
-                collection = rag_engine.get_collection()
-                for pid in product_ids[:5]:  # Limit to 5
-                    try:
-                        result = collection.get(ids=[pid], include=['metadatas'])
-                        if result and result['metadatas']:
-                            meta = result['metadatas'][0]
-                            products_data.append({
-                                'id': meta.get('product_id', pid),
-                                'name': meta.get('name', ''),
-                                'price': meta.get('price', 0),
-                                'rating': meta.get('rating', 0),
-                                'slug': meta.get('slug', ''),
-                                'image_url': meta.get('image_url', ''),
-                                'category': meta.get('category', ''),
-                                'is_in_stock': meta.get('is_in_stock', False),
-                            })
-                    except Exception:
-                        pass
+                products_data = rag_engine.get_products_by_ids(product_ids[:5])
             except Exception as e:
                 logger.error(f'Error fetching product metadata: {e}')
 
@@ -161,8 +144,7 @@ class HealthCheckView(APIView):
 
     def get(self, request):
         try:
-            collection = rag_engine.get_collection()
-            product_count = collection.count()
+            product_count = rag_engine.get_indexed_product_count()
         except Exception:
             product_count = 0
 

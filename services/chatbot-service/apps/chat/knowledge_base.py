@@ -4,7 +4,7 @@ Knowledge Base Module
 Xây dựng Knowledge Base cho RAG Chatbot bằng cách:
 - Fetch toàn bộ sản phẩm từ Product Service API
 - Chuyển đổi thành document text cho embedding
-- Chuẩn bị metadata để lưu vào ChromaDB
+- Chuẩn bị metadata để lưu vào Neo4j Knowledge Graph
 """
 import logging
 import requests
@@ -113,7 +113,7 @@ def build_product_document(product):
 
 
 def build_product_metadata(product):
-    """Build metadata dict for ChromaDB storage."""
+    """Build metadata dict for Neo4j Knowledge Graph storage."""
     category_name = product.get('category_name', '')
     if not category_name and isinstance(product.get('category'), dict):
         category_name = product['category'].get('name', '')

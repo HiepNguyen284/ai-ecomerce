@@ -242,6 +242,61 @@ class ApiService {
       headers: this.getHeaders(),
     });
   }
+
+  // Analytics
+  async getAnalyticsDashboard() {
+    return this.request(`${this.baseUrl}/analytics/dashboard/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsCustomers(params = '') {
+    return this.request(`${this.baseUrl}/analytics/customers/${params ? '?' + params : ''}`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsCustomerDetail(customerId) {
+    return this.request(`${this.baseUrl}/analytics/customers/${customerId}/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsSegments() {
+    return this.request(`${this.baseUrl}/analytics/segments/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsSegmentChart() {
+    return this.request(`${this.baseUrl}/analytics/charts/segments/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsChurnChart() {
+    return this.request(`${this.baseUrl}/analytics/charts/churn/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsRFMChart() {
+    return this.request(`${this.baseUrl}/analytics/charts/rfm/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsTrends() {
+    return this.request(`${this.baseUrl}/analytics/charts/trends/`, {
+      headers: this.getHeaders(true),
+    });
+  }
+
+  async getAnalyticsCategories() {
+    return this.request(`${this.baseUrl}/analytics/charts/categories/`, {
+      headers: this.getHeaders(true),
+    });
+  }
 }
 
 export default new ApiService();
