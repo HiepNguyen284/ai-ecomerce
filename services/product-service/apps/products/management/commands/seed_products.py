@@ -1,325 +1,13 @@
 import random
 import re
+import urllib.parse
 from decimal import Decimal, ROUND_HALF_UP
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 from apps.products.models import Category, Product
 
-
-SEED_DATA = {
-    'Điện thoại': {
-        'description': 'Điện thoại thông minh mới nhất từ các thương hiệu hàng đầu',
-        'icon': '📱',
-        'products': [
-            {
-                'name': 'iPhone 16 Pro Max',
-                'description': 'Apple iPhone 16 Pro Max với chip A18 Pro, màn hình Super Retina XDR 6.9 inch, hệ thống camera 48MP với zoom quang 5x, thiết kế titanium sang trọng.',
-                'price': Decimal('1199.99'),
-                'compare_price': Decimal('1299.99'),
-                'stock': 50,
-                'rating': Decimal('4.85'),
-                'num_reviews': 2340,
-                'image_url': '/images/products/iphone-16-pro-max.png',
-            },
-            {
-                'name': 'Samsung Galaxy S25 Ultra',
-                'description': 'Samsung Galaxy S25 Ultra trang bị Snapdragon 8 Elite, màn hình Dynamic AMOLED 2X 6.9 inch, camera 200MP, bút S Pen tích hợp, Galaxy AI thông minh.',
-                'price': Decimal('1099.99'),
-                'compare_price': Decimal('1199.99'),
-                'stock': 35,
-                'rating': Decimal('4.70'),
-                'num_reviews': 1850,
-                'image_url': '/images/products/samsung-galaxy-s25-ultra.jpg',
-            },
-        ],
-    },
-    'Laptop': {
-        'description': 'Laptop mạnh mẽ cho công việc và giải trí',
-        'icon': '💻',
-        'products': [
-            {
-                'name': 'MacBook Pro 14" M4 Pro',
-                'description': 'Apple MacBook Pro 14 inch với chip M4 Pro, 24GB bộ nhớ hợp nhất, SSD 1TB, màn hình Liquid Retina XDR, pin 17 giờ sử dụng.',
-                'price': Decimal('1999.99'),
-                'compare_price': Decimal('2199.99'),
-                'stock': 20,
-                'rating': Decimal('4.90'),
-                'num_reviews': 980,
-                'image_url': '/images/products/macbook-pro-14.png',
-            },
-            {
-                'name': 'Dell XPS 15 OLED',
-                'description': 'Dell XPS 15 với Intel Core Ultra 9, RAM 32GB, SSD 1TB, màn hình OLED 3.5K InfinityEdge 15.6 inch, card đồ họa NVIDIA RTX 4070.',
-                'price': Decimal('1799.99'),
-                'compare_price': Decimal('1999.99'),
-                'stock': 15,
-                'rating': Decimal('4.65'),
-                'num_reviews': 720,
-                'image_url': '/images/products/dell-xps-15.png',
-            },
-        ],
-    },
-    'Âm thanh': {
-        'description': 'Tai nghe, loa và thiết bị âm thanh cao cấp',
-        'icon': '🎧',
-        'products': [
-            {
-                'name': 'Sony WH-1000XM6',
-                'description': 'Tai nghe không dây chống ồn cao cấp Sony với công nghệ ANC hàng đầu thế giới, pin 40 giờ, LDAC Hi-Res Audio, kết nối đa điểm.',
-                'price': Decimal('349.99'),
-                'compare_price': Decimal('399.99'),
-                'stock': 100,
-                'rating': Decimal('4.75'),
-                'num_reviews': 3200,
-                'image_url': '/images/products/sony-wh1000xm6.png',
-            },
-            {
-                'name': 'AirPods Pro 3',
-                'description': 'Apple AirPods Pro 3 với chip H3, chống ồn chủ động thích ứng, âm thanh không gian, sạc USB-C, pin 6 giờ sử dụng liên tục.',
-                'price': Decimal('249.99'),
-                'compare_price': Decimal('279.99'),
-                'stock': 200,
-                'rating': Decimal('4.80'),
-                'num_reviews': 5600,
-                'image_url': '/images/products/airpods-pro-3.png',
-            },
-        ],
-    },
-    'Thời trang': {
-        'description': 'Quần áo thời trang nam và nữ',
-        'icon': '👕',
-        'products': [
-            {
-                'name': 'Quần Jeans Levi\'s 501 Original',
-                'description': 'Quần jeans Levi\'s 501 dáng thẳng kinh điển với khuy cài đặc trưng, ống thẳng, chất liệu denim cao cấp mang tính biểu tượng từ năm 1873.',
-                'price': Decimal('69.99'),
-                'compare_price': Decimal('89.99'),
-                'stock': 300,
-                'rating': Decimal('4.40'),
-                'num_reviews': 8900,
-                'image_url': '/images/products/quan-jeans-levi.jpg',
-            },
-            {
-                'name': 'Áo Khoác Lông Vũ Uniqlo Ultra Light',
-                'description': 'Áo khoác lông vũ siêu nhẹ Uniqlo. Cực kỳ ấm áp nhưng nhẹ tênh, chống nước, có thể gấp gọn vào túi đựng riêng để mang theo.',
-                'price': Decimal('79.99'),
-                'compare_price': Decimal('99.99'),
-                'stock': 180,
-                'rating': Decimal('4.55'),
-                'num_reviews': 4200,
-                'image_url': '/images/products/ao-khoac-long-vu-uniqlo-ultra-light.jpg',
-            },
-        ],
-    },
-    'Giày dép': {
-        'description': 'Giày thể thao, boots và giày dép các loại',
-        'icon': '👟',
-        'products': [
-            {
-                'name': 'Nike Air Max 270 React',
-                'description': 'Giày chạy bộ Nike Air Max 270 React kết hợp đệm Max Air và bọt React cho cảm giác êm ái, nhẹ nhàng khi di chuyển.',
-                'price': Decimal('149.99'),
-                'compare_price': Decimal('179.99'),
-                'stock': 200,
-                'rating': Decimal('4.50'),
-                'num_reviews': 4500,
-                'image_url': '/images/products/nike-air-max-270-react.jpg',
-            },
-            {
-                'name': 'Adidas Ultraboost Light',
-                'description': 'Adidas Ultraboost Light — đôi Ultraboost nhẹ nhất từ trước đến nay với đế giữa BOOST, đế ngoài cao su Continental, upper Primeknit+.',
-                'price': Decimal('189.99'),
-                'compare_price': Decimal('219.99'),
-                'stock': 150,
-                'rating': Decimal('4.65'),
-                'num_reviews': 2100,
-                'image_url': '/images/products/adidas-ultraboost-light.jpg',
-            },
-        ],
-    },
-    'Gia dụng': {
-        'description': 'Thiết bị gia dụng thông minh cho ngôi nhà hiện đại',
-        'icon': '🏠',
-        'products': [
-            {
-                'name': 'Máy Hút Bụi Dyson V15 Detect',
-                'description': 'Máy hút bụi không dây Dyson V15 Detect với tia laser phát hiện bụi, cảm biến áp điện, màn hình LCD, thời gian hoạt động lên đến 60 phút.',
-                'price': Decimal('649.99'),
-                'compare_price': Decimal('749.99'),
-                'stock': 30,
-                'rating': Decimal('4.80'),
-                'num_reviews': 1560,
-                'image_url': '/images/products/may-hut-bui-dyson-v15-detect.jpg',
-            },
-            {
-                'name': 'Robot Hút Bụi iRobot Roomba j9+',
-                'description': 'Robot hút bụi iRobot Roomba j9+ tự đổ rác với điều hướng PrecisionVision, làm sạch 3 giai đoạn và lập bản đồ thông minh.',
-                'price': Decimal('599.99'),
-                'compare_price': Decimal('799.99'),
-                'stock': 25,
-                'rating': Decimal('4.60'),
-                'num_reviews': 2300,
-                'image_url': '/images/products/robot-hut-bui-irobot-roomba-j9.jpg',
-            },
-        ],
-    },
-    'Nhà bếp': {
-        'description': 'Dụng cụ nấu ăn, đồ bếp và phụ kiện nhà bếp',
-        'icon': '🍳',
-        'products': [
-            {
-                'name': 'Máy Trộn KitchenAid Artisan',
-                'description': 'Máy trộn đứng KitchenAid Artisan dung tích 5 lít với 10 tốc độ, bát thép không gỉ, công nghệ trộn hành tinh chuyên nghiệp.',
-                'price': Decimal('379.99'),
-                'compare_price': Decimal('449.99'),
-                'stock': 45,
-                'rating': Decimal('4.85'),
-                'num_reviews': 6700,
-                'image_url': '/images/products/may-tron-kitchenaid-artisan.jpg',
-            },
-            {
-                'name': 'Nồi Áp Suất Instant Pot Duo Plus',
-                'description': 'Instant Pot 9 trong 1: nồi áp suất, nồi nấu chậm, nồi cơm điện, hấp, xào, làm sữa chua, hâm nóng, tiệt trùng — đa năng cho mọi bữa ăn.',
-                'price': Decimal('89.99'),
-                'compare_price': Decimal('119.99'),
-                'stock': 250,
-                'rating': Decimal('4.70'),
-                'num_reviews': 12000,
-                'image_url': '/images/products/noi-ap-suat-instant-pot-duo-plus.jpg',
-            },
-        ],
-    },
-    'Sách': {
-        'description': 'Sách bán chạy và sách chuyên ngành',
-        'icon': '📚',
-        'products': [
-            {
-                'name': 'Clean Code - Robert C. Martin',
-                'description': 'Cẩm nang phát triển phần mềm Agile. Học cách viết code sạch, dễ đọc và dễ bảo trì — cuốn sách không thể thiếu cho lập trình viên chuyên nghiệp.',
-                'price': Decimal('39.99'),
-                'compare_price': Decimal('49.99'),
-                'stock': 500,
-                'rating': Decimal('4.60'),
-                'num_reviews': 15000,
-                'image_url': '/images/products/clean-code---robert-c--martin.jpg',
-            },
-            {
-                'name': 'System Design Interview - Alex Xu',
-                'description': 'Hướng dẫn chuyên sâu về phỏng vấn thiết kế hệ thống của Alex Xu. Bao gồm khả năng mở rộng, hệ thống phân tán, microservices và kiến trúc thực tế.',
-                'price': Decimal('34.99'),
-                'compare_price': Decimal('44.99'),
-                'stock': 400,
-                'rating': Decimal('4.55'),
-                'num_reviews': 8500,
-                'image_url': '/images/products/system-design-interview---alex-xu.jpg',
-            },
-        ],
-    },
-    'Gaming': {
-        'description': 'Máy chơi game, tay cầm và phụ kiện gaming',
-        'icon': '🎮',
-        'products': [
-            {
-                'name': 'PlayStation 5 Slim',
-                'description': 'Sony PS5 Slim với SSD 1TB, tay cầm DualSense không dây, chơi game 4K ở 120fps, ray tracing, tương thích ngược với game PS4.',
-                'price': Decimal('449.99'),
-                'compare_price': Decimal('499.99'),
-                'stock': 40,
-                'rating': Decimal('4.80'),
-                'num_reviews': 9800,
-                'image_url': '/images/products/playstation-5-slim.jpg',
-            },
-            {
-                'name': 'Nintendo Switch 2',
-                'description': 'Nintendo Switch 2 với màn hình LCD 8 inch, tay cầm Joy-Con cải tiến, hỗ trợ công nghệ DLSS, tương thích ngược game Switch thế hệ trước.',
-                'price': Decimal('399.99'),
-                'compare_price': Decimal('449.99'),
-                'stock': 60,
-                'rating': Decimal('4.75'),
-                'num_reviews': 3400,
-                'image_url': '/images/products/nintendo-switch-2.jpg',
-            },
-        ],
-    },
-    'Đồng hồ': {
-        'description': 'Đồng hồ thông minh và đồng hồ cao cấp',
-        'icon': '⌚',
-        'products': [
-            {
-                'name': 'Apple Watch Ultra 3',
-                'description': 'Apple Watch Ultra 3 với vỏ titanium 49mm, GPS hai tần số chính xác cao, pin lên đến 72 giờ, máy tính lặn chuyên nghiệp, chip S10.',
-                'price': Decimal('799.99'),
-                'compare_price': Decimal('899.99'),
-                'stock': 30,
-                'rating': Decimal('4.85'),
-                'num_reviews': 1200,
-                'image_url': '/images/products/apple-watch-ultra-3.jpg',
-            },
-            {
-                'name': 'Samsung Galaxy Watch 7',
-                'description': 'Samsung Galaxy Watch 7 với cảm biến BioActive, đo thành phần cơ thể, theo dõi giấc ngủ chuyên sâu, Wear OS, pin 40 giờ sử dụng.',
-                'price': Decimal('299.99'),
-                'compare_price': Decimal('349.99'),
-                'stock': 80,
-                'rating': Decimal('4.50'),
-                'num_reviews': 2800,
-                'image_url': '/images/products/samsung-galaxy-watch-7.jpg',
-            },
-        ],
-    },
-    'Thể thao & Fitness': {
-        'description': 'Dụng cụ thể thao, tập luyện và phụ kiện fitness',
-        'icon': '🏋️',
-        'products': [
-            {
-                'name': 'Xe Đạp Tập Peloton Bike+',
-                'description': 'Xe đạp tập Peloton Bike+ với màn hình cảm ứng HD 24 inch xoay được, tự động điều chỉnh lực cản, tích hợp Apple GymKit và hệ thống loa.',
-                'price': Decimal('2495.00'),
-                'compare_price': Decimal('2795.00'),
-                'stock': 10,
-                'rating': Decimal('4.70'),
-                'num_reviews': 3500,
-                'image_url': '/images/products/xe-ap-tap-peloton-bike.jpg',
-            },
-            {
-                'name': 'Súng Massage Theragun PRO Plus',
-                'description': 'Therabody Theragun PRO Plus thiết bị trị liệu gõ rung với ứng dụng thông minh, 6 đầu massage chuyên dụng, công nghệ QuietForce siêu êm.',
-                'price': Decimal('399.99'),
-                'compare_price': Decimal('449.99'),
-                'stock': 70,
-                'rating': Decimal('4.65'),
-                'num_reviews': 1800,
-                'image_url': '/images/products/sung-massage-theragun-pro-plus.jpg',
-            },
-        ],
-    },
-    'Làm đẹp': {
-        'description': 'Chăm sóc da, trang điểm và chăm sóc cá nhân',
-        'icon': '💄',
-        'products': [
-            {
-                'name': 'Máy Tạo Kiểu Tóc Dyson Airwrap',
-                'description': 'Dyson Airwrap máy tạo kiểu tóc đa năng với công nghệ luồng khí Coanda. Uốn, tạo sóng, duỗi mượt và sấy khô mà không gây tổn thương nhiệt.',
-                'price': Decimal('499.99'),
-                'compare_price': Decimal('599.99'),
-                'stock': 55,
-                'rating': Decimal('4.75'),
-                'num_reviews': 4100,
-                'image_url': '/images/products/may-tao-kieu-toc-dyson-airwrap.jpg',
-            },
-            {
-                'name': 'Kem Dưỡng Ẩm La Mer',
-                'description': 'La Mer Kem Dưỡng Ẩm 60ml. Chứa Miracle Broth™ giúp cấp ẩm tối ưu, tái tạo da và tăng cường độ rạng rỡ tự nhiên cho làn da.',
-                'price': Decimal('345.00'),
-                'compare_price': Decimal('380.00'),
-                'stock': 40,
-                'rating': Decimal('4.80'),
-                'num_reviews': 6200,
-                'image_url': '/images/products/kem-duong-am-la-mer.jpg',
-            },
-        ],
-    },
-}
+USD_TO_VND_RATE = Decimal('26000')
+THOUSAND = Decimal('1000')
 
 VND_PRICE_RANGES = {
     'Điện thoại': (Decimal('5000000'), Decimal('45000000')),
@@ -336,204 +24,63 @@ VND_PRICE_RANGES = {
     'Làm đẹp': (Decimal('90000'), Decimal('12000000')),
 }
 
-CATEGORY_IMAGES = {
-    'Điện thoại': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=600&fit=crop&auto=format',
-    'Laptop': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=600&fit=crop&auto=format',
-    'Âm thanh': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=600&fit=crop&auto=format',
-    'Thời trang': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&h=600&fit=crop&auto=format',
-    'Giày dép': 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=800&h=600&fit=crop&auto=format',
-    'Gia dụng': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop&auto=format',
-    'Nhà bếp': 'https://images.unsplash.com/photo-1556909114-44e3e70034e2?w=800&h=600&fit=crop&auto=format',
-    'Sách': 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800&h=600&fit=crop&auto=format',
-    'Gaming': 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=800&h=600&fit=crop&auto=format',
-    'Đồng hồ': 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800&h=600&fit=crop&auto=format',
-    'Thể thao & Fitness': 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=600&fit=crop&auto=format',
-    'Làm đẹp': 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&h=600&fit=crop&auto=format',
-}
-
-USD_TO_VND_RATE = Decimal('26000')
-THOUSAND = Decimal('1000')
-
-
 def _round_to_thousand(value):
     rounded = (value / THOUSAND).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * THOUSAND
     return rounded.quantize(Decimal('0.01'))
 
-
-def _slug_token(value):
-    token = re.sub(r'[^a-z0-9]+', '-', value.lower()).strip('-')
-    return token or 'product'
-
-
-def _to_decimal(value):
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
-
-
-def _clamp(value, min_value, max_value):
-    return max(min_value, min(max_value, value))
-
-
-def _price_to_vnd(category_name, usd_price, cycle, rng):
-    min_price, max_price = VND_PRICE_RANGES[category_name]
-    base_vnd = _to_decimal(usd_price) * USD_TO_VND_RATE
-    variation = Decimal(str(rng.uniform(0.87, 1.18))) * Decimal(str(1 + ((cycle - 1) * 0.01)))
-    adjusted = _round_to_thousand(base_vnd * variation)
-    return _clamp(adjusted, min_price, max_price)
-
-
-def _build_compare_price(price, category_name, rng):
-    min_price, max_price = VND_PRICE_RANGES[category_name]
-    markup = Decimal(str(rng.uniform(1.06, 1.28)))
-    compare_price = _round_to_thousand(price * markup)
-    compare_price = max(compare_price, price + THOUSAND)
-    return _clamp(compare_price, min_price, max_price)
-
-
-def _build_stock(base_stock, cycle, rng):
-    scale = Decimal(str(rng.uniform(0.75, 1.45)))
-    stock = int((Decimal(str(base_stock)) * scale) + (cycle - 1) * rng.randint(2, 6))
-    return max(stock, 5)
-
-
-def _build_rating(base_rating, rng):
-    base = float(_to_decimal(base_rating))
-    rating = max(3.70, min(4.99, base + rng.uniform(-0.18, 0.16)))
-    return Decimal(f'{rating:.2f}')
-
-
-def _build_reviews(base_reviews, cycle, rng):
-    baseline = int(base_reviews * rng.uniform(0.28, 0.95))
-    growth = rng.randint(80, 340) * cycle
-    return max(20, baseline + growth)
-
-
-def _build_slug(name, cycle):
-    if cycle == 1:
-        return slugify(name)
-    return f'{slugify(name)}-phien-ban-{cycle}'
-
-
-def _variant_name(template_name, cycle):
-    if cycle == 1:
-        return template_name
-    return f'{template_name} Phiên Bản {cycle}'
-
-
-def _variant_description(template_description, cycle):
-    if cycle == 1:
-        return (
-            f'{template_description} Giá thị trường Việt Nam chính hãng, '
-            'bảo hành toàn quốc, hỗ trợ giao hàng nhanh.'
-        )
-    return (
-        f'{template_description} Phiên bản {cycle} thị trường Việt Nam với giá '
-        'ưu đãi, bảo hành chính hãng, giao hàng toàn quốc nhanh chóng.'
-    )
-
+def _get_price(cat_name, idx):
+    min_p, max_p = VND_PRICE_RANGES[cat_name]
+    step = (max_p - min_p) / 25
+    price = min_p + step * Decimal(str(idx))
+    return _round_to_thousand(price)
 
 class Command(BaseCommand):
-    help = 'Tạo dữ liệu sản phẩm với giá VND và hình ảnh sản phẩm (mặc định: 240 sản phẩm).'
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--per-category',
-            type=int,
-            default=2,
-            help='Số lượng sản phẩm mỗi danh mục (mặc định: 2, tổng: 24).',
-        )
-        parser.add_argument(
-            '--seed',
-            type=int,
-            default=2026,
-            help='Seed cho bộ sinh số ngẫu nhiên.',
-        )
-
+    help = 'Generate 20-25 distinct products per category with pollinations AI dynamic image'
+    
     def handle(self, *args, **options):
-        per_category = max(1, options['per_category'])
-        rng = random.Random(options['seed'])
-        target_total = per_category * len(SEED_DATA)
 
-        self.stdout.write(
-            f'Đang tạo danh mục sản phẩm với giá VND ({per_category} sản phẩm/danh mục, mục tiêu {target_total} sản phẩm)...'
-        )
+        categories_data = {'Điện thoại': ('smartphone', ['iPhone 16 Pro Max', 'iPhone 16 Pro', 'iPhone 16 Plus', 'iPhone 16', 'iPhone 15 Pro Max', 'Samsung Galaxy S25 Ultra', 'Samsung Galaxy S25+', 'Samsung Galaxy S25', 'Samsung Galaxy Z Fold 6', 'Samsung Galaxy Z Flip 6', 'Google Pixel 9 Pro XL', 'Google Pixel 9 Pro', 'Google Pixel 9', 'Google Pixel 8a', 'OnePlus 12 Pro', 'Xiaomi 14 Ultra', 'Xiaomi 14 Pro', 'Xiaomi 14', 'Oppo Find X7 Ultra', 'Vivo X100 Pro', 'Asus ROG Phone 8 Pro', 'Nubia RedMagic 9 Pro', 'Sony Xperia 1 VI', 'Huawei 14 Ultra', 'Realme X90 Pro']), 'Laptop': ('laptop', ['MacBook Pro 16 M4 Max', 'MacBook Pro 14 M4 Pro', 'MacBook Air 15 M3', 'MacBook Air 13 M3', 'Dell XPS 16 OLED', 'Dell XPS 14', 'Dell XPS 13 Plus', 'Dell Alienware m16 R2', 'Asus ROG Zephyrus G14', 'Asus ROG Strix Scar 18', 'Asus Zenbook 14 OLED', 'Asus TUF Gaming A15', 'Lenovo Legion Pro 7i', 'Lenovo ThinkPad X1 Carbon Gen 12', 'Lenovo Yoga 9i', 'Lenovo IdeaPad Pro 5i', 'HP Spectre x360 14', 'HP Omen 16', 'HP Victus 15', 'HP Envy 16', 'MSI Stealth 16 Ultra', 'MSI Raider GE78', 'Razer Blade 16', 'Razer Blade 14', 'Acer Predator Helios 18']), 'Âm thanh': ('headphones speaker', ['Sony WH-1000XM6', 'Sony WF-1000XM5', 'AirPods Pro Gen 3', 'AirPods Max 2', 'Bose QuietComfort Ultra', 'Bose QuietComfort Earbuds 2', 'Sennheiser Momentum 4', 'Sennheiser Accentum', 'Jabra Elite 10', 'Jabra Elite 8 Active', 'Beats Studio Pro', 'Beats Fit Pro', 'Samsung Galaxy Buds 3 Pro', 'Google Pixel Buds Pro 2', 'Marshall Motif II', 'Marshall Major V', 'Bowers & Wilkins Beoplay H95', 'JBL Tour One M2', 'JBL Charge 5', 'JBL Flip 6', 'Sonos Play:5', 'Harmon Kardon Aura Studio 4', 'Devialet Beoplay', 'Audio-Technica True Wireless', 'Anker Soundcore Motion']), 'Thời trang': ('clothing fashion apparel', ['Áo Thun Nam Cotton', 'Áo Sơ Mi Nam Oxford', 'Quần Jean Nam Levi', 'Áo Khoác Denim Chống Nước', 'Áo Polo Thể Thao Nam', 'Váy Liền Nữ Xinh Xắn', 'Đầm Dạ Hội Công Chúa', 'Áo Hoodie Nam Tính', 'Áo Len Nữ Mũ Đỉnh', 'Quần Kaki Nam Cao Cấp', 'Áo Dài Truyền Thống', 'Áo Vest Nam Thanh Lịch', 'Đồ Bộ Ngủ Nữ Lụa', 'Áo Khoác Gió Nữ', 'Quần Short Jean Nữ', 'Áo Phông Oversize Nữ', 'Quần Âu Nam Công Sở', 'Váy Cưới Thanh Lịch', 'Đầm Body Phá Cách', 'Quần baggy Nữ', 'Áo Dạ Nữ Thu Đông', 'Áo Nỉ Nam Mùa Đông', 'Bộ Đồ Thể Thao Nam', 'Set Đồ Tập Yoga Nữ', 'Khăn Quàng Cổ Lụa']), 'Giày dép': ('shoes sneakers', ['Nike Air Max 2026', 'Nike Air Force 1', 'Nike ZoomX Vaporfly', 'Nike Dunk Low', 'Nike Pegasus 40', 'Adidas Ultraboost Light 2', 'Adidas Yeezy Boost 350', 'Adidas NMD R2', 'Adidas Stan Smith', 'Adidas Superstar', 'Puma RS-X', 'Puma Suede Classic', 'Vans Old Skool', 'Vans Authentic', 'Converse Chuck Taylor 70s', 'New Balance 990v6', 'New Balance 550', 'New Balance 2002R', 'Asics Gel-Kayano 30', 'Asics Nimbus 26', 'Reebok Club C 85', 'Balenciaga Triple S', 'Gucci Track Sneakers', 'Salomon XT-6', 'Clarks Desert Boot']), 'Gia dụng': ('home appliance', ['Máy Hút Bụi Dyson V16', 'Robot Hút Bụi Roborock S9', 'Máy Lọc Không Khí LG Puricare', 'Máy Giặt Cửa Trước Samsung AI', 'Tủ Lạnh Bosch 4 Cửa', 'Quạt Không Cánh Dyson Pure Cool', 'Bàn Ủi Hơi Nước Philips', 'Máy Sấy Điện Electrolux', 'Máy Lau Nhà Tự Động Dreame', 'Máy Lọc Nước RO Karofi', 'Tủ Lạnh Side-by-side Panasonic', 'Máy Giặt Sấy Kèm LG', 'Bình Nước Nóng Ariston', 'Quạt Trần Panasonic', 'Đèn Chùm Hiện Đại', 'Máy Sưởi Dầu Tiross', 'Máy Điều Hòa Daikin Inverter', 'Tủ Lạnh LG Instaview', 'Máy Hút Ẩm Sharp', 'Máy Tạo Ẩm Xiaomi', 'Chuông Cửa Màn Hình', 'Khóa Cửa Thông Minh Yale', 'Quạt Cây Mitsubishi', 'Máy Diệt Khuẩn Không Khí', 'Tủ Sấy Quần Áo']), 'Nhà bếp': ('kitchen appliance', ['Nồi Chiên Không Dầu Philips XXL', 'Lò Vi Sóng Panasonic', 'Máy Ép Chậm Hurom', 'Máy Phà Cà Phê Delonghi', 'Máy Xay Sinh Tố Blendtec', 'Bếp Từ Bosch Series 8', 'Nồi Áp Suất Instant Pot Pro', 'Máy Rửa Bát Siemens', 'Máy Nướng Bánh Mì Smeg', 'Máy Pha Cà Phê Viên Nén Nespresso', 'Bếp Ga Rinnai', 'Máy Hút Mùi Electrolux', 'Nồi Cơm Điện Tử Toshiba', 'Máy Làm Sữa Hạt Tefal', 'Cân Tiểu Ly Nhà Bếp', 'Máy Trộn Bột KitchenAid', 'Chảo Chống Dính Tefal', 'Bộ Nồi Inox Fissler', 'Máy Đánh Trứng Bosch', 'Máy Nhồi Bột Bear', 'Lò Nướng Sanaky', 'Máy Xay Thịt Philips', 'Bếp Nướng Điện Lock&Lock', 'Máy Ép Trái Cây Panasonic', 'Bếp Hồng Ngoại Sunhouse']), 'Sách': ('book cover', ['Sách Clean Code by Robert C. Martin', 'Sách Đắc Nhân Tâm bản đặc biệt', 'Sách Nhà Giả Kim', 'Sách Tư Duy Nhanh Và Chậm', 'Sách Sức Mạnh Của Thói Quen', 'Sách Lược Sử Loài Người', 'Sách Hành Trình Về Phương Đông', 'Sách Tội Ác Và Hình Phạt', 'Từ Điển Anh Việt Oxford', 'Tiểu Thuyết Harry Potter', 'Sách Dạy Con Làm Giàu Tập 1', 'Sách Nghệ Thuật Tinh Tế Của Việc Đếch Quan Tâm', 'Sách 7 Thói Quen Của Người Thành Đạt', 'Sách Design Patterns', 'Sách System Design Interview', 'Sách Bí Mật Của May Mắn', 'Sách Đời Ngắn Đừng Ngủ Dài', 'Sách Nguồn Gốc Các Loài', 'Sách 100 Quy Luật Của Sự Thành Công', 'Sách Marketing Căn Bản', 'Tiểu Thuyết Bố Già', 'Sách Khởi Nghiệp Tinh Gọn', 'Sách Thay Đổi Tí Hon Hiệu Quả To Lớn', 'Sách Trí Tuệ Xúc Cảm', 'Sách Lãnh Đạo Bằng Sức Mạnh']), 'Gaming': ('gaming setup console', ['PlayStation 5 Pro', 'Xbox Series X 2TB', 'Nintendo Switch OLED 2', 'Kính VR Meta Quest 3', 'Steam Deck OLED', 'Bàn Phím Cơ Razer Huntsman', 'Chuột Gaming Logitech G Pro X', 'Tai Nghe Gaming HyperX Cloud III', 'Màn Hình Gaming Asus ROG 240Hz', 'Màn Hình Samsung Odyssey G9', 'Ghế Gaming Secretlab Titan', 'Card Màn Hình RTX 5090', 'Card Màn Hình Radeon RX 8900 XTX', 'Vô Lăng Đua Xe Logitech G923', 'Microphone Shure SM7B', 'Webcam Logitech Brio 4K', 'Bàn Phím Cơ Corsair Black', 'Tay Cầm Xbox Elite', 'Tay Cầm DualSense Edge', 'Kính Thực Tế Ảo Apple Vision Pro', 'Bàn Chơi Game Herman Miller', 'Router Gaming Asus ROG', 'SSD Samsung 990 Pro', 'Bảng Điều Khiển Elgato Stream Deck', 'Tai Nghe Gaming SteelSeries']), 'Đồng hồ': ('luxury smartwatch', ['Apple Watch Ultra 3', 'Apple Watch Series 10', 'Samsung Galaxy Watch 7 Pro', 'Garmin Fenix 8', 'Garmin Epix Pro', 'Rolex Submariner', 'Rolex Daytona', 'Omega Speedmaster', 'Omega Seamaster', 'Tag Heuer Carrera', 'Longines HydroConquest', 'Tissot PRX', 'Casio G-Shock Mudmaster', 'Casio Edifice', 'Orient Bambino', 'Citizen Tsuyosa', 'Seiko Prospex Diver', 'Seiko Presage', 'Hublot Big Bang', 'Patek Philippe Nautilus', 'Breitling Chronomat', 'IWC Navitimer', 'Tudor Superocean', 'Garmin Forerunner 965', 'Coros Vertix 2']), 'Thể thao & Fitness': ('fitness sport equipment', ['Xe Đạp Tập Thể Dục Peloton', 'Máy Chạy Bộ KingSport', 'Tạ Đơn Điều Chỉnh Bowflex', 'Thảm Tập Yoga Liforme', 'Súng Massage Theragun Pro', 'Băng Đầu Gối Thể Thao', 'Dây Kháng Lực TRX', 'Con Lăn Quần Tập Bụng', 'Xà Đơn Gắn Cửa Cải Tiến', 'Vợt Cầu Lông Yonex Astrox', 'Quả Bóng Rổ Spalding', 'Giày Đá Bóng Nike Mercurial', 'Quần Áo Chạy Bộ Nam', 'Túi Thể Thao Nike', 'Balo Nước Leo Núi', 'Kính Bơi Speedo', 'Găng Tay Tập Gym', 'Dây Nhảy Có Số Đếm', 'Tạ Bình Vôi Kettlebell', 'Ghế Tập Tạ Đa Năng', 'Cung Phượt Cắm Trại', 'Giày Leo Núi Columbia', 'Ván Trượt Ván Vans', 'Quần Bơi Nam Arena', 'Bóng Bàn Molten']), 'Làm đẹp': ('cosmetics skincare', ['Máy Tạo Kiểu Tóc Dyson Airwrap', 'Kem Dưỡng Ẩm La Mer', 'Serum Phục Hồi Estee Lauder', 'Nước Hoa Hồng SK-II', 'Kem Chống Nắng Anessa', 'Son Môi Tom Ford', 'Son Dưỡng Dior', 'Kem Nền Chanel', 'Phấn Phủ YSL', 'Kẻ Mắt Nước Lancome', 'Nước Tẩy Trang Bioderma', 'Sữa Rửa Mặt CeraVe', 'Dầu Gội Phục Hồi Kerastase', 'Mặt Nạ Giấy Mediheal', 'Tẩy Tế Bào Chết Paula Choice', 'Kem Mắt Kiehls', 'Serum Trị Mụn Ordinary', 'Xịt Khoáng Vichy', 'Phấn Nước Cushion Sulwhasoo', 'Tinh Chất Vitamin C', 'Máy Hút Mụn Halio', 'Máy Rửa Mặt Foreo Luna 4', 'Sữa Tắm Bath & Body Works', 'Lotion Dưỡng Thể Nhạt', "Kem Dưỡng Tay L'Occitane"])}
 
-        created_count = 0
-        updated_count = 0
-
-        for category_index, (category_name, cat_data) in enumerate(SEED_DATA.items(), start=1):
-            category_image = CATEGORY_IMAGES.get(category_name, '')
-            category_defaults = {
-                'description': cat_data['description'],
-                'image_url': category_image,
-            }
-            category, category_created = Category.objects.get_or_create(
+        self.stdout.write('Bắt đầu sinh 300 sản phẩm với hình ảnh độc lập...')
+        
+        for category_name, value in categories_data.items():
+            cat_keyword, product_names = value
+            category, _ = Category.objects.get_or_create(
                 name=category_name,
-                defaults=category_defaults,
-            )
-
-            if not category_created:
-                category_changed = False
-                if category.description != cat_data['description']:
-                    category.description = cat_data['description']
-                    category_changed = True
-                if category.image_url != category_image:
-                    category.image_url = category_image
-                    category_changed = True
-                if category_changed:
-                    category.save(update_fields=['description', 'image_url'])
-
-            self.stdout.write(f'  Danh mục: {category_name}')
-
-            templates = cat_data['products']
-            for i in range(per_category):
-                template = templates[i % len(templates)]
-                cycle = (i // len(templates)) + 1
-
-                name = _variant_name(template['name'], cycle)
-                slug = _build_slug(template['name'], cycle)
-                description = _variant_description(template['description'], cycle)
-
-                price = _price_to_vnd(category_name, template['price'], cycle, rng)
-                compare_price = _build_compare_price(price, category_name, rng)
-                stock = _build_stock(template['stock'], cycle, rng)
-                rating = _build_rating(template.get('rating', Decimal('4.20')), rng)
-                num_reviews = _build_reviews(template.get('num_reviews', 120), cycle, rng)
-                # Use the template's image URL directly for all variants
-                image_url = template['image_url']
-
-                product_defaults = {
-                    'name': name,
-                    'description': description,
-                    'price': price,
-                    'compare_price': compare_price,
-                    'category': category,
-                    'image_url': image_url,
-                    'stock': stock,
-                    'rating': rating,
-                    'num_reviews': num_reviews,
-                    'is_active': True,
+                defaults={
+                    'description': f'Danh mục {category_name} chất lượng cao',
+                    'image_url': f'https://loremflickr.com/600/600/{urllib.parse.quote(cat_keyword.replace(" ", ","))}?lock=999'
                 }
-
-                product, created = Product.objects.get_or_create(slug=slug, defaults=product_defaults)
-                if created:
-                    created_count += 1
-                    self.stdout.write(f'    + Đã tạo: {name}')
-                    continue
-
-                update_fields = []
-                for field_name, expected_value in product_defaults.items():
-                    if getattr(product, field_name) != expected_value:
-                        setattr(product, field_name, expected_value)
-                        update_fields.append(field_name)
-
-                if update_fields:
-                    product.save(update_fields=update_fields)
-                    updated_count += 1
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Hoàn tất! Mục tiêu {target_total} sản phẩm, đã tạo {created_count}, cập nhật {updated_count}.'
             )
-        )
+            self.stdout.write(f' -> {category_name}')
+            
+            for idx, name in enumerate(product_names):
+                slug = slugify(name)
+                price = _get_price(category_name, idx)
+                compare_price = _round_to_thousand(price * Decimal('1.2'))
+                stock = random.randint(10, 200)
+                rating = Decimal(f"{random.uniform(4.0, 5.0):.2f}")
+                num_reviews = random.randint(10, 5000)
+                
+                # Dynamic image placeholder (pollinations is too slow/rate-limits real browsers for 300 images)
+                # Dùng loremflickr có từ khóa category đảm bảo 300 ảnh riêng biệt & liên quan & TRẢ VỀ NGAY LẬP TỨC
+                encoded_keyword = urllib.parse.quote(cat_keyword.replace(' ', ','))
+                image_url = f"https://loremflickr.com/600/600/{encoded_keyword}?lock={idx}"
+                
+                Product.objects.update_or_create(
+                    slug=slug,
+                    defaults={
+                        'name': name,
+                        'category': category,
+                        'description': f'Phiên bản cao cấp của {name} với chất liệu hoàn thiện và hiệu năng tuyệt vời. Phù hợp cho mọi nhu cầu.',
+                        'price': price,
+                        'compare_price': compare_price,
+                        'stock': stock,
+                        'rating': rating,
+                        'num_reviews': num_reviews,
+                        'image_url': image_url,
+                        'is_active': True
+                    }
+                )
+        
+        self.stdout.write(self.style.SUCCESS("Đã sinh thành công 300 sản phẩm độc lập!"))

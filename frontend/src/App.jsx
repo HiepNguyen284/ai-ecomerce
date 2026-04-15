@@ -1,8 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
-import ChatbotWidget from './components/ChatbotWidget.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProductsPage from './pages/ProductsPage.jsx';
 import ProductDetailPage from './pages/ProductDetailPage.jsx';
@@ -11,7 +10,41 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
+import ChatWidget from './components/ChatWidget.jsx';
 import api from './services/api.js';
+
+function AppContent({ user, setUser, cartCount, setCartCount, authReady, handleLogout }) {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="app">
+      {!isAdminRoute && <Navbar user={user} cartCount={cartCount} onLogout={handleLogout} />}
+      <main className={isAdminRoute ? 'admin-main' : ''}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:slug" element={<ProductDetailPage setCartCount={setCartCount} />} />
+          <Route path="/cart" element={<CartPage user={user} setCartCount={setCartCount} authReady={authReady} />} />
+          <Route path="/orders" element={<OrdersPage user={user} authReady={authReady} />} />
+          <Route path="/login" element={<LoginPage onLogin={(userData, token) => {
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(userData);
+          }} />} />
+          <Route path="/register" element={<RegisterPage onLogin={(userData, token) => {
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(userData);
+          }} />} />
+          <Route path="/admin" element={<AdminPage user={user} authReady={authReady} onLogout={handleLogout} />} />
+        </Routes>
+      </main>
+      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <ChatWidget />}
+    </div>
+  );
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -52,12 +85,6 @@ function App() {
     };
   }, []);
 
-  const handleLogin = (userData, token) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -67,23 +94,14 @@ function App() {
 
   return (
     <Router>
-      <div className="app">
-        <Navbar user={user} cartCount={cartCount} onLogout={handleLogout} />
-        <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/products/:slug" element={<ProductDetailPage setCartCount={setCartCount} />} />
-            <Route path="/cart" element={<CartPage user={user} setCartCount={setCartCount} authReady={authReady} />} />
-            <Route path="/orders" element={<OrdersPage user={user} authReady={authReady} />} />
-            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-            <Route path="/register" element={<RegisterPage onLogin={handleLogin} />} />
-            <Route path="/admin" element={<AdminPage user={user} authReady={authReady} />} />
-          </Routes>
-        </main>
-        <Footer />
-        <ChatbotWidget />
-      </div>
+      <AppContent
+        user={user}
+        setUser={setUser}
+        cartCount={cartCount}
+        setCartCount={setCartCount}
+        authReady={authReady}
+        handleLogout={handleLogout}
+      />
     </Router>
   );
 }

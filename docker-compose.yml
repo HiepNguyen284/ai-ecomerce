@@ -207,7 +207,7 @@ services:
     restart: unless-stopped
 
   # ========================
-  # Chatbot Service
+  # Chatbot Service (RAG)
   # ========================
   chatbot-service:
     build:
@@ -224,9 +224,12 @@ services:
       - DEBUG=1
       - ALLOWED_HOSTS=*
       - PRODUCT_SERVICE_URL=http://product-service:8000
+      - USER_SERVICE_URL=http://user-service:8000
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - CHROMA_DB_PATH=/app/chroma_data
     volumes:
       - ./services/chatbot-service:/app
+      - chatbot_chroma_data:/app/chroma_data
     depends_on:
       ecommerce-db:
         condition: service_healthy
@@ -243,6 +246,7 @@ volumes:
   caddy_data:
   caddy_config:
   postgres_data:
+  chatbot_chroma_data:
 
 # ========================
 # Networks

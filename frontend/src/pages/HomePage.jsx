@@ -49,7 +49,14 @@ function HomePage() {
       <div className="homepage-layout">
         <aside className="categories-sidebar">
           <div className="sidebar-header">
-            <h2>Danh mục sản phẩm</h2>
+            <h2>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 6, verticalAlign: 'middle'}}>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+              Danh mục
+            </h2>
           </div>
           <div className="categories-vertical-list">
             {categories.map((cat) => (
@@ -63,28 +70,61 @@ function HomePage() {
         </aside>
 
         <main className="homepage-content">
-          <section className="hero" id="hero-section">
-            <div className="hero-content">
-              <div className="hero-badge">🚀 Bộ sưu tập mới 2026</div>
-              <h1>Khám phá<br /><span className="gradient-text">Phong cách của bạn</span></h1>
-              <p>Khám phá bộ sưu tập sản phẩm cao cấp với hơn 12 danh mục.</p>
-              <div className="hero-actions">
-                <Link to="/products" className="btn btn-primary btn-lg" id="shop-now-button">Mua sắm ngay →</Link>
-                <Link to="/register" className="btn btn-secondary btn-lg" id="join-button">Đăng ký miễn phí</Link>
+          {/* Hero Banner */}
+          <section className="hero-banner" id="hero-section">
+            <div className="hero-banner-slide">
+              <div className="hero-banner-content">
+                <div className="hero-badge">🔥 FLASH SALE</div>
+                <h1>Siêu Sale<br /><span className="gradient-text">Giảm đến 50%</span></h1>
+                <p>Mua sắm ngay hàng ngàn sản phẩm chất lượng với giá ưu đãi cực sốc.</p>
+                <div className="hero-actions">
+                  <Link to="/products" className="btn btn-primary btn-lg" id="shop-now-button">Mua ngay →</Link>
+                </div>
+              </div>
+              <div className="hero-banner-features">
+                <div className="hero-feature">
+                  <span className="hero-feature-icon">🚚</span>
+                  <span>Miễn phí ship</span>
+                </div>
+                <div className="hero-feature">
+                  <span className="hero-feature-icon">✅</span>
+                  <span>Chính hãng 100%</span>
+                </div>
+                <div className="hero-feature">
+                  <span className="hero-feature-icon">↩️</span>
+                  <span>Đổi trả dễ dàng</span>
+                </div>
+                <div className="hero-feature">
+                  <span className="hero-feature-icon">💳</span>
+                  <span>Thanh toán an toàn</span>
+                </div>
               </div>
             </div>
+          </section>
+
+          {/* Category Icons Row */}
+          <section className="category-icons-section">
+            {categories.slice(0, 10).map((cat) => (
+              <Link to={`/products?category=${cat.id}`} key={cat.id} className="category-icon-card">
+                <div className="category-icon-circle">
+                  {categoryIcons[cat.name] || '🛍️'}
+                </div>
+                <span className="category-icon-label">{cat.name}</span>
+              </Link>
+            ))}
           </section>
 
           {loading ? (
             <div className="loading-spinner"><div className="spinner"></div></div>
           ) : (
-            Object.entries(productsByCategory).map(([catName, catProducts], idx) => (
+            Object.entries(productsByCategory).map(([catName, catProducts]) => (
               <section className="section" key={catName}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{categoryIcons[catName] || '🛍️'}</span> {catName}
+                <div className="section-title-bar">
+                  <h2>
+                    <span className="section-title-icon">{categoryIcons[catName] || '🛍️'}</span>
+                    {catName}
                   </h2>
-                  <Link to={`/products?search=${encodeURIComponent(catName)}`} style={{ color: 'var(--color-primary)', fontSize: '0.9rem', marginRight: '16px' }}>Xem tất cả →</Link>
+                  <Link to={`/products?search=${encodeURIComponent(catName)}`} className="section-view-all">Xem tất cả →</Link>
                 </div>
                 <div className="product-grid">
                   {catProducts.map((product) => (
@@ -97,7 +137,7 @@ function HomePage() {
                         <h3 className="product-card-name">{product.name}</h3>
                         <div className="product-card-rating">
                           <span className="stars">{renderStars(product.rating)}</span>
-                          <span>(Đã bán {product.num_reviews})</span>
+                          <span>Đã bán {product.num_reviews}</span>
                         </div>
                         <div className="product-card-price">
                             <span className="current">{formatVND(product.price)}</span>
@@ -110,16 +150,6 @@ function HomePage() {
               </section>
             ))
           )}
-
-          <section className="section" id="cta-section" style={{ background: 'white', padding: '40px', borderRadius: '4px', textAlign: 'center', marginTop: '20px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 500, marginBottom: '10px' }}>
-              Trải nghiệm mua sắm tuyệt vời cùng ShopVerse
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
-              Tìm kiếm sản phẩm ưng ý với mức giá siêu ưu đãi ngay hôm nay.
-            </p>
-            <Link to="/register" className="btn btn-primary btn-lg" style={{ padding: '12px 30px', fontSize: '1.1rem' }}>Tham gia ngay</Link>
-          </section>
         </main>
       </div>
   );

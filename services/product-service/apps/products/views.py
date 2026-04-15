@@ -191,35 +191,6 @@ class AdminProductDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ChatbotView(APIView):
-    """RAG Chatbot endpoint for product consultation."""
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        message = request.data.get('message', '').strip()
-        conversation_history = request.data.get('history', [])
-
-        if not message:
-            return Response(
-                {'error': 'Message is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if len(message) > 1000:
-            return Response(
-                {'error': 'Message too long. Max 1000 characters.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        from .chatbot import generate_chat_response
-        result = generate_chat_response(message, conversation_history)
-
-        return Response({
-            'response': result.get('response', ''),
-            'products': result.get('products', []),
-        })
-
-
 class HealthCheckView(APIView):
     permission_classes = [AllowAny]
 

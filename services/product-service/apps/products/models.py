@@ -7,7 +7,7 @@ class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    image_url = models.URLField(blank=True, null=True)
+    image_url = models.URLField(max_length=1000, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -28,7 +28,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     compare_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
-    image_url = models.URLField(blank=True, null=True)
+    image_url = models.URLField(max_length=1000, blank=True, null=True)
     stock = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)

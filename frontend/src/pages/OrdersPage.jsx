@@ -14,12 +14,12 @@ function OrdersPage({ user, authReady = true }) {
   }, [user, authReady]);
 
   const statusMap = { pending: 'Chờ xử lý', confirmed: 'Đã xác nhận', processing: 'Đang xử lý', shipped: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
-  const statusColors = { pending: 'var(--color-warning)', confirmed: 'var(--color-primary-light)', processing: 'var(--color-secondary)', shipped: 'var(--color-accent-warm)', delivered: 'var(--color-success)', cancelled: 'var(--color-danger)' };
+  const statusColors = { pending: '#f59e0b', confirmed: '#3b82f6', processing: '#06b6d4', shipped: '#f97316', delivered: '#059669', cancelled: '#ef4444' };
 
   if (!authReady) return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
 
   if (!user) return (
-    <div className="section" style={{ paddingTop: '100px', minHeight: '100vh' }}><div className="container"><div className="empty-state">
+    <div className="orders-page"><div className="container"><div className="empty-state">
       <div className="icon">🔒</div><h3>Vui lòng đăng nhập để xem đơn hàng</h3>
       <p style={{ marginBottom: 'var(--space-xl)' }}>Bạn cần đăng nhập để xem lịch sử đơn hàng.</p>
       <Link to="/login" className="btn btn-primary">Đăng nhập</Link>
@@ -29,9 +29,25 @@ function OrdersPage({ user, authReady = true }) {
   if (loading) return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
 
   return (
-    <div className="section" style={{ paddingTop: '100px', minHeight: '100vh' }}>
+    <div className="orders-page">
       <div className="container fade-in">
-        <div className="section-header" style={{ textAlign: 'left' }}><h2>Đơn hàng của tôi</h2><p>Theo dõi và quản lý đơn hàng</p></div>
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <Link to="/">Trang chủ</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span>Đơn hàng của tôi</span>
+        </div>
+
+        <h1 className="page-title">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 10, verticalAlign: 'middle'}}>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          Đơn hàng của tôi
+        </h1>
+        
         {orders.length === 0 ? (
           <div className="empty-state">
             <div className="icon">📦</div><h3>Chưa có đơn hàng</h3>
@@ -39,37 +55,39 @@ function OrdersPage({ user, authReady = true }) {
             <Link to="/products" className="btn btn-primary">Xem sản phẩm</Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+          <div className="orders-list">
             {orders.map((order) => (
-              <div key={order.id} style={{ background: 'var(--gradient-card)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-xl)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
-                  <div>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Mã đơn hàng</div>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', fontFamily: 'monospace' }}>{order.id.slice(0, 8)}...</div>
+              <div key={order.id} className="order-card">
+                <div className="order-card-header">
+                  <div className="order-card-id">
+                    <span className="order-label">Mã đơn hàng</span>
+                    <code>{order.id.slice(0, 8)}...</code>
                   </div>
-                  <div style={{ padding: '0.35rem 1rem', borderRadius: 'var(--radius-full)', fontSize: '0.82rem', fontWeight: 700, color: statusColors[order.status], background: `${statusColors[order.status]}15`, border: `1px solid ${statusColors[order.status]}30`, textTransform: 'capitalize' }}>
+                  <div className="order-card-date">
+                    {new Date(order.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <span className="order-status-badge" style={{
+                    color: statusColors[order.status],
+                    background: `${statusColors[order.status]}15`,
+                    border: `1px solid ${statusColors[order.status]}30`,
+                  }}>
                     {statusMap[order.status] || order.status}
-                  </div>
+                  </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                <div className="order-card-items">
                   {(order.items || []).map((item) => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-sm) 0', borderBottom: '1px solid var(--color-border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                        <img src={item.product_image_url || 'https://placehold.co/50x50/1a1a2e/eee?text=SP'} alt={item.product_name} style={{ width: 50, height: 50, borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.product_name}</div>
-                          <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>SL: {item.quantity} × {formatVND(item.product_price)}</div>
-                        </div>
+                    <div key={item.id} className="order-item">
+                      <img src={item.product_image_url || 'https://placehold.co/60x60/f8fafc/334155?text=SP'} alt={item.product_name} className="order-item-img" />
+                      <div className="order-item-info">
+                        <div className="order-item-name">{item.product_name}</div>
+                        <div className="order-item-qty">SL: {item.quantity} × {formatVND(item.product_price)}</div>
                       </div>
-                      <div style={{ fontWeight: 700 }}>{formatVND(item.subtotal)}</div>
+                      <div className="order-item-subtotal">{formatVND(item.subtotal)}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-lg)', paddingTop: 'var(--space-md)' }}>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-                    {new Date(order.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>Tổng: <span style={{ color: 'var(--color-primary-light)' }}>{formatVND(order.total_amount)}</span></div>
+                <div className="order-card-footer">
+                  <span>Tổng: <strong style={{ color: 'var(--color-primary)', fontSize: '1.15rem' }}>{formatVND(order.total_amount)}</strong></span>
                 </div>
               </div>
             ))}

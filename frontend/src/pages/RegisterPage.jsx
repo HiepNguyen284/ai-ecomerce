@@ -15,7 +15,12 @@ function RegisterPage({ onLogin }) {
     try {
       const data = await api.register(form);
       onLogin(data.user, data.token);
-      navigate('/');
+      // If registered user is admin, redirect to admin
+      if (data.user && data.user.is_staff) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       const msgs = [];
       if (typeof err === 'object') Object.values(err).forEach((v) => { if (Array.isArray(v)) msgs.push(...v); else if (typeof v === 'string') msgs.push(v); });
@@ -26,6 +31,14 @@ function RegisterPage({ onLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-card fade-in">
+        <div className="auth-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="40" height="40">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span>ShopVerse</span>
+        </div>
         <h2>Tạo tài khoản</h2>
         <p className="subtitle">Tham gia ShopVerse và bắt đầu mua sắm</p>
         {error && <div className="alert alert-error">{error}</div>}

@@ -37,62 +37,110 @@ function ProductsPage() {
   const renderStars = (r) => '★'.repeat(Math.floor(r)) + '☆'.repeat(5 - Math.floor(r));
 
   return (
-    <div className="section" style={{ paddingTop: '100px', minHeight: '100vh' }}>
-      <div className="container fade-in">
-        <div className="section-header" style={{ textAlign: 'left' }}>
-          <h2>Tất cả sản phẩm</h2>
-          <p>Duyệt toàn bộ bộ sưu tập của chúng tôi</p>
+    <div className="products-page">
+      <div className="container">
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <Link to="/">Trang chủ</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span>Tất cả sản phẩm</span>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-md)', marginBottom: 'var(--space-2xl)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="text" className="form-control" placeholder="Tìm kiếm sản phẩm..."
-            value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: '300px' }} id="search-input" />
-          <select className="form-control" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} style={{ maxWidth: '200px' }} id="category-filter">
-            <option value="">Tất cả danh mục</option>
-            {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-          </select>
-          <select className="form-control" value={ordering} onChange={(e) => setOrdering(e.target.value)} style={{ maxWidth: '200px' }} id="sort-filter">
-            <option value="-created_at">Mới nhất</option>
-            <option value="price">Giá: Thấp → Cao</option>
-            <option value="-price">Giá: Cao → Thấp</option>
-            <option value="-rating">Đánh giá cao nhất</option>
-            <option value="name">Tên A-Z</option>
-          </select>
-        </div>
-        {loading ? (
-          <div className="loading-spinner"><div className="spinner"></div></div>
-        ) : products.length === 0 ? (
-          <div className="empty-state">
-            <div className="icon">🔍</div>
-            <h3>Không tìm thấy sản phẩm</h3>
-            <p>Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.</p>
-          </div>
-        ) : (
-          <div className="product-grid">
-            {products.map((product) => (
-              <Link to={`/products/${product.slug}`} key={product.id} className="product-card">
-                {product.discount_percent > 0 && <div className="product-card-badge">-{product.discount_percent}%</div>}
-                <div className="product-card-image">
-                  <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
+
+        <div className="products-layout">
+          {/* Sidebar Filters */}
+          <aside className="products-filter-sidebar">
+            <div className="filter-section">
+              <h3 className="filter-title">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                Bộ lọc
+              </h3>
+            </div>
+            <div className="filter-section">
+              <h4>Danh mục</h4>
+              <div className="filter-options">
+                <label className={`filter-option ${!selectedCategory ? 'filter-option--active' : ''}`}>
+                  <input type="radio" name="category" value="" checked={!selectedCategory} onChange={() => setSelectedCategory('')} />
+                  Tất cả
+                </label>
+                {categories.map((cat) => (
+                  <label key={cat.id} className={`filter-option ${selectedCategory === String(cat.id) ? 'filter-option--active' : ''}`}>
+                    <input type="radio" name="category" value={cat.id} checked={selectedCategory === String(cat.id)} onChange={(e) => setSelectedCategory(e.target.value)} />
+                    {cat.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="filter-section">
+              <h4>Sắp xếp theo</h4>
+              <div className="filter-options">
+                {[
+                  { value: '-created_at', label: 'Mới nhất' },
+                  { value: 'price', label: 'Giá: Thấp → Cao' },
+                  { value: '-price', label: 'Giá: Cao → Thấp' },
+                  { value: '-rating', label: 'Đánh giá cao nhất' },
+                  { value: 'name', label: 'Tên A-Z' },
+                ].map((opt) => (
+                  <label key={opt.value} className={`filter-option ${ordering === opt.value ? 'filter-option--active' : ''}`}>
+                    <input type="radio" name="ordering" value={opt.value} checked={ordering === opt.value} onChange={(e) => setOrdering(e.target.value)} />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          {/* Products Content */}
+          <div className="products-content">
+            <div className="products-toolbar">
+              <div className="products-toolbar-left">
+                <h1>Tất cả sản phẩm</h1>
+                <span className="products-count">{products.length} sản phẩm</span>
+              </div>
+              <div className="products-toolbar-right">
+                <div className="search-box">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" placeholder="Tìm kiếm sản phẩm..."
+                    value={search} onChange={(e) => setSearch(e.target.value)} id="search-input" />
                 </div>
-                <div className="product-card-body">
-                  <div className="product-card-category">{product.category_name}</div>
-                  <h3 className="product-card-name">{product.name}</h3>
-                  <div className="product-card-rating">
-                    <span className="stars">{renderStars(product.rating)}</span>
-                    <span>({product.num_reviews})</span>
-                  </div>
-                  <div className="product-card-footer">
-                    <div className="product-card-price">
-                      <span className="current">{formatVND(product.price)}</span>
-                      {product.compare_price && <span className="original">{formatVND(product.compare_price)}</span>}
+              </div>
+            </div>
+            
+            {loading ? (
+              <div className="loading-spinner"><div className="spinner"></div></div>
+            ) : products.length === 0 ? (
+              <div className="empty-state">
+                <div className="icon">🔍</div>
+                <h3>Không tìm thấy sản phẩm</h3>
+                <p>Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.</p>
+              </div>
+            ) : (
+              <div className="product-grid">
+                {products.map((product) => (
+                  <Link to={`/products/${product.slug}`} key={product.id} className="product-card">
+                    {product.discount_percent > 0 && <div className="product-card-badge">-{product.discount_percent}%</div>}
+                    <div className="product-card-image">
+                      <img src={product.image_url || `https://placehold.co/600x400/f8fafc/334155?text=${encodeURIComponent(product.name)}`} alt={product.name} />
                     </div>
-                    <button className="btn btn-primary btn-sm">Xem</button>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                    <div className="product-card-body">
+                      <div className="product-card-category">{product.category_name}</div>
+                      <h3 className="product-card-name">{product.name}</h3>
+                      <div className="product-card-rating">
+                        <span className="stars">{renderStars(product.rating)}</span>
+                        <span>({product.num_reviews})</span>
+                      </div>
+                      <div className="product-card-price">
+                        <span className="current">{formatVND(product.price)}</span>
+                        {product.compare_price && <span className="original">{formatVND(product.compare_price)}</span>}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

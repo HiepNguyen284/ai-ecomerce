@@ -221,11 +221,13 @@ class ApiService {
   }
 
   // Chatbot
-  async sendChatMessage(message, sessionId = '') {
+  async sendChatMessage(message, sessionId, conversationId = null) {
+    const body = { message, session_id: sessionId };
+    if (conversationId) body.conversation_id = conversationId;
     return this.request(`${this.baseUrl}/chatbot/chat/`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ message, session_id: sessionId }),
+      body: JSON.stringify(body),
     });
   }
 
@@ -235,9 +237,8 @@ class ApiService {
     });
   }
 
-  async clearChatHistory(sessionId) {
-    return this.request(`${this.baseUrl}/chatbot/clear/${sessionId}/`, {
-      method: 'DELETE',
+  async getChatHistory(sessionId) {
+    return this.request(`${this.baseUrl}/chatbot/history/${sessionId}/`, {
       headers: this.getHeaders(),
     });
   }

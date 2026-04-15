@@ -70,8 +70,20 @@ function CartPage({ user, setCartCount, authReady = true }) {
   return (
     <div className="cart-page">
       <div className="container fade-in">
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 'var(--space-2xl)' }}>
-          Giỏ hàng {items.length > 0 && <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem' }}>({cart.total_items} sản phẩm)</span>}
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <Link to="/">Trang chủ</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span>Giỏ hàng</span>
+        </div>
+
+        <h1 className="page-title">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 10, verticalAlign: 'middle'}}>
+            <circle cx="9" cy="20" r="1"></circle>
+            <circle cx="18" cy="20" r="1"></circle>
+            <path d="M2 3h2l2.7 11.5a2 2 0 0 0 2 1.5h8.9a2 2 0 0 0 1.9-1.4L22 7H6"></path>
+          </svg>
+          Giỏ hàng {items.length > 0 && <span className="page-title-sub">({cart.total_items} sản phẩm)</span>}
         </h1>
         {message && <div className="alert alert-success">{message}</div>}
         {error && <div className="alert alert-error">{error}</div>}
@@ -86,7 +98,7 @@ function CartPage({ user, setCartCount, authReady = true }) {
             <div>
               {items.map((item) => (
                 <div className="cart-item" key={item.id}>
-                  <div className="cart-item-image"><img src={item.product_image_url || 'https://placehold.co/200x200/1a1a2e/eee?text=SP'} alt={item.product_name} /></div>
+                  <div className="cart-item-image"><img src={item.product_image_url || 'https://placehold.co/200x200/f8fafc/334155?text=SP'} alt={item.product_name} /></div>
                   <div className="cart-item-info">
                     <h3>{item.product_name}</h3>
                     <div className="price">{formatVND(item.product_price)}</div>
@@ -99,7 +111,7 @@ function CartPage({ user, setCartCount, authReady = true }) {
                       <button className="btn btn-secondary btn-sm" onClick={() => handleRemoveItem(item.id)} style={{ color: 'var(--color-danger)' }}>Xóa</button>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>{formatVND(item.subtotal)}</div>
+                  <div style={{ fontWeight: 700, fontSize: '1.1rem', whiteSpace: 'nowrap', color: 'var(--color-primary)' }}>{formatVND(item.subtotal)}</div>
                 </div>
               ))}
             </div>
@@ -121,7 +133,7 @@ function CartPage({ user, setCartCount, authReady = true }) {
                     <div className="form-group"><label>Địa chỉ</label><textarea className="form-control" rows="3" required value={orderForm.shipping_address} onChange={(e) => setOrderForm({ ...orderForm, shipping_address: e.target.value })} /></div>
                     <div className="form-group"><label>Ghi chú</label><input type="text" className="form-control" value={orderForm.note} onChange={(e) => setOrderForm({ ...orderForm, note: e.target.value })} /></div>
                     <div className="cart-summary-row total"><span>Tổng cộng</span><span>{formatVND(cart.total_price)}</span></div>
-                    <button type="submit" className="btn btn-accent btn-lg" style={{ width: '100%', marginTop: 'var(--space-md)' }} disabled={submitting}>{submitting ? 'Đang xử lý...' : '💳 Đặt hàng (COD)'}</button>
+                    <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-md)' }} disabled={submitting}>{submitting ? 'Đang xử lý...' : '💳 Đặt hàng (COD)'}</button>
                     <button type="button" className="btn btn-secondary" style={{ width: '100%', marginTop: 'var(--space-sm)' }} onClick={() => setShowCheckout(false)}>← Quay lại</button>
                   </form>
                 </>

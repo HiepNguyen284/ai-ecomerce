@@ -89,7 +89,7 @@ function createFormFromProduct(product) {
   };
 }
 
-function AdminPage({ user, authReady = true }) {
+function AdminPage({ user, authReady = true, onLogout }) {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -118,11 +118,13 @@ function AdminPage({ user, authReady = true }) {
   const [orderUpdatingId, setOrderUpdatingId] = useState(null);
   const [customerUpdatingId, setCustomerUpdatingId] = useState(null);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'products', label: 'Sản phẩm' },
-    { id: 'orders', label: 'Đơn hàng' },
-    { id: 'customers', label: 'Khách hàng' },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'products', label: 'Sản phẩm', icon: '📦' },
+    { id: 'orders', label: 'Đơn hàng', icon: '🧾' },
+    { id: 'customers', label: 'Khách hàng', icon: '👥' },
   ];
 
   useEffect(() => {
@@ -433,6 +435,11 @@ function AdminPage({ user, authReady = true }) {
       .sort((a, b) => b.totalSpent - a.totalSpent);
   }, [customers, orders, customerSearch]);
 
+  const handleAdminLogout = () => {
+    if (onLogout) onLogout();
+    navigate('/login');
+  };
+
   if (!authReady) {
     return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
   }
@@ -443,196 +450,237 @@ function AdminPage({ user, authReady = true }) {
 
   if (!user.is_staff) {
     return (
-      <div className="section" style={{ paddingTop: '100px', minHeight: '100vh' }}>
-        <div className="container">
-          <div className="empty-state">
-            <div className="icon">⛔</div>
-            <h3>Bạn không có quyền truy cập trang quản trị</h3>
-            <p style={{ marginBottom: 'var(--space-xl)' }}>Vui lòng liên hệ quản trị viên hệ thống để được cấp quyền.</p>
-            <Link to="/" className="btn btn-primary">Quay về trang chủ</Link>
-          </div>
+      <div className="admin-access-denied">
+        <div className="admin-access-denied-card">
+          <div className="admin-access-denied-icon">⛔</div>
+          <h3>Bạn không có quyền truy cập trang quản trị</h3>
+          <p>Vui lòng liên hệ quản trị viên hệ thống để được cấp quyền.</p>
+          <Link to="/" className="btn btn-primary">Quay về trang chủ</Link>
         </div>
       </div>
     );
   }
 
   if (loading) {
-    return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
+    return (
+      <div className="admin-layout">
+        <div className="loading-spinner" style={{ paddingTop: '150px', width: '100%' }}><div className="spinner"></div></div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ paddingTop: '80px', minHeight: '100vh', display: 'flex' }}>
-      <aside style={{
-        width: '260px',
-        background: 'var(--color-bg-secondary)',
-        borderRight: '1px solid var(--color-border)',
-        padding: 'var(--space-xl) 0',
-        position: 'fixed',
-        top: '70px',
-        bottom: 0,
-        overflowY: 'auto',
-        zIndex: 10,
-      }}>
-        <div style={{ padding: '0 var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-primary-light)' }}>Quản trị hệ thống</h3>
-          <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>Customer, Product, Order Management</p>
+    <div className="admin-layout">
+      {/* Admin Sidebar */}
+      <aside className={`admin-sidebar ${sidebarCollapsed ? 'admin-sidebar--collapsed' : ''}`}>
+        <div className="admin-sidebar-header">
+          <div className="admin-sidebar-brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="28" height="28">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            {!sidebarCollapsed && <span>ShopVerse Admin</span>}
+          </div>
+          <button className="admin-sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Thu gọn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              display: 'block',
-              width: '100%',
-              padding: 'var(--space-md) var(--space-lg)',
-              textAlign: 'left',
-              background: activeTab === tab.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-              color: activeTab === tab.id ? 'var(--color-primary-dark)' : 'var(--color-text-secondary)',
-              borderLeft: activeTab === tab.id ? '3px solid var(--color-primary)' : '3px solid transparent',
-              fontSize: '0.95rem',
-              fontWeight: activeTab === tab.id ? 700 : 500,
-              transition: 'all 0.2s',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        <nav className="admin-sidebar-nav">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`admin-sidebar-item ${activeTab === tab.id ? 'admin-sidebar-item--active' : ''}`}
+              title={tab.label}
+            >
+              <span className="admin-sidebar-icon">{tab.icon}</span>
+              {!sidebarCollapsed && <span className="admin-sidebar-label">{tab.label}</span>}
+            </button>
+          ))}
+        </nav>
 
-        <div style={{ padding: 'var(--space-xl) var(--space-lg)', borderTop: '1px solid var(--color-border)', marginTop: 'var(--space-xl)' }}>
-          <button className="btn btn-secondary btn-sm" style={{ width: '100%', marginBottom: 'var(--space-sm)' }} onClick={loadAdminData}>
-            Làm mới dữ liệu
+        <div className="admin-sidebar-footer">
+          <button className="admin-sidebar-item" onClick={loadAdminData} title="Làm mới">
+            <span className="admin-sidebar-icon">🔄</span>
+            {!sidebarCollapsed && <span className="admin-sidebar-label">Làm mới dữ liệu</span>}
           </button>
-          <Link to="/" className="btn btn-secondary btn-sm" style={{ width: '100%' }}>Về trang chủ</Link>
+          <Link to="/" className="admin-sidebar-item" title="Về trang khách hàng">
+            <span className="admin-sidebar-icon">🏪</span>
+            {!sidebarCollapsed && <span className="admin-sidebar-label">Trang khách hàng</span>}
+          </Link>
+          <button className="admin-sidebar-item admin-sidebar-item--danger" onClick={handleAdminLogout} title="Đăng xuất">
+            <span className="admin-sidebar-icon">🚪</span>
+            {!sidebarCollapsed && <span className="admin-sidebar-label">Đăng xuất</span>}
+          </button>
         </div>
       </aside>
 
-      <main style={{ marginLeft: '260px', flex: 1, padding: 'var(--space-2xl)' }}>
-        {notice && (
-          <div className={`alert ${notice.type === 'success' ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 'var(--space-lg)' }}>
-            {notice.text}
+      {/* Admin Content */}
+      <div className={`admin-content ${sidebarCollapsed ? 'admin-content--expanded' : ''}`}>
+        {/* Admin Top Bar */}
+        <header className="admin-topbar">
+          <div className="admin-topbar-left">
+            <h1 className="admin-topbar-title">{tabs.find(t => t.id === activeTab)?.label || 'Dashboard'}</h1>
           </div>
-        )}
-
-        {error && (
-          <div className="alert alert-error" style={{ marginBottom: 'var(--space-lg)' }}>
-            {error}
+          <div className="admin-topbar-right">
+            <Link to="/" className="admin-topbar-btn" title="Về trang khách hàng">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              Về trang khách hàng
+            </Link>
+            <div className="admin-topbar-user">
+              <div className="admin-topbar-avatar">
+                {(user.first_name || user.username || 'A').charAt(0).toUpperCase()}
+              </div>
+              <span>{user.first_name || user.username}</span>
+            </div>
           </div>
-        )}
+        </header>
 
-        {activeTab === 'dashboard' && <DashboardTab stats={stats} orders={orders} />}
+        <div className="admin-content-body">
+          {notice && (
+            <div className={`alert ${notice.type === 'success' ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 'var(--space-lg)' }}>
+              {notice.text}
+            </div>
+          )}
 
-        {activeTab === 'products' && (
-          <ProductsTab
-            rows={filteredProducts}
-            categories={categories}
-            productSearch={productSearch}
-            setProductSearch={setProductSearch}
-            productForm={productForm}
-            editingProductId={editingProductId}
-            productSubmitting={productSubmitting}
-            isPanelOpen={isProductPanelOpen}
-            onFieldChange={handleProductFieldChange}
-            onSubmit={handleSubmitProduct}
-            onStartCreate={handleStartCreateProduct}
-            onStartEdit={handleStartEditProduct}
-            onClosePanel={handleCloseProductPanel}
-            onDelete={handleDeleteProduct}
-          />
-        )}
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: 'var(--space-lg)' }}>
+              {error}
+            </div>
+          )}
 
-        {activeTab === 'orders' && (
-          <OrdersTab
-            rows={filteredOrders}
-            orderDrafts={orderDrafts}
-            orderSearch={orderSearch}
-            setOrderSearch={setOrderSearch}
-            orderStatusFilter={orderStatusFilter}
-            setOrderStatusFilter={setOrderStatusFilter}
-            orderUpdatingId={orderUpdatingId}
-            onDraftChange={(orderId, nextStatus) => {
-              setOrderDrafts((prev) => ({ ...prev, [orderId]: nextStatus }));
-            }}
-            onSaveStatus={handleSaveOrderStatus}
-          />
-        )}
+          {activeTab === 'dashboard' && <DashboardTab stats={stats} orders={orders} />}
 
-        {activeTab === 'customers' && (
-          <CustomersTab
-            rows={customersWithStats}
-            customerSearch={customerSearch}
-            setCustomerSearch={setCustomerSearch}
-            customerUpdatingId={customerUpdatingId}
-            onToggleFlag={handleToggleCustomerFlag}
-          />
-        )}
-      </main>
+          {activeTab === 'products' && (
+            <ProductsTab
+              rows={filteredProducts}
+              categories={categories}
+              productSearch={productSearch}
+              setProductSearch={setProductSearch}
+              productForm={productForm}
+              editingProductId={editingProductId}
+              productSubmitting={productSubmitting}
+              isPanelOpen={isProductPanelOpen}
+              onFieldChange={handleProductFieldChange}
+              onSubmit={handleSubmitProduct}
+              onStartCreate={handleStartCreateProduct}
+              onStartEdit={handleStartEditProduct}
+              onClosePanel={handleCloseProductPanel}
+              onDelete={handleDeleteProduct}
+            />
+          )}
+
+          {activeTab === 'orders' && (
+            <OrdersTab
+              rows={filteredOrders}
+              orderDrafts={orderDrafts}
+              orderSearch={orderSearch}
+              setOrderSearch={setOrderSearch}
+              orderStatusFilter={orderStatusFilter}
+              setOrderStatusFilter={setOrderStatusFilter}
+              orderUpdatingId={orderUpdatingId}
+              onDraftChange={(orderId, nextStatus) => {
+                setOrderDrafts((prev) => ({ ...prev, [orderId]: nextStatus }));
+              }}
+              onSaveStatus={handleSaveOrderStatus}
+            />
+          )}
+
+          {activeTab === 'customers' && (
+            <CustomersTab
+              rows={customersWithStats}
+              customerSearch={customerSearch}
+              setCustomerSearch={setCustomerSearch}
+              customerUpdatingId={customerUpdatingId}
+              onToggleFlag={handleToggleCustomerFlag}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
+/* ========== Dashboard Tab ========== */
 function DashboardTab({ stats, orders }) {
-  const recentOrders = orders.slice(0, 6);
-  const cardStyle = {
-    background: 'var(--gradient-card)',
-    border: '1px solid var(--color-border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: 'var(--space-xl)',
-  };
+  const recentOrders = orders.slice(0, 8);
+
+  const statCards = [
+    { label: 'Sản phẩm', value: stats.products, icon: '📦', color: '#3b82f6' },
+    { label: 'Đơn hàng', value: stats.orders, icon: '🧾', color: '#f59e0b' },
+    { label: 'Khách hàng', value: stats.users, icon: '👥', color: '#10b981' },
+    { label: 'Doanh thu', value: formatVND(stats.revenue), icon: '💰', color: '#ef4444' },
+  ];
 
   return (
     <div className="fade-in">
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 'var(--space-2xl)' }}>Dashboard</h2>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 'var(--space-lg)', marginBottom: 'var(--space-2xl)' }}>
-        <div style={cardStyle}><div style={{ color: 'var(--color-text-muted)', marginBottom: 6 }}>Sản phẩm</div><div style={{ fontSize: '1.7rem', fontWeight: 800 }}>{stats.products}</div></div>
-        <div style={cardStyle}><div style={{ color: 'var(--color-text-muted)', marginBottom: 6 }}>Đơn hàng</div><div style={{ fontSize: '1.7rem', fontWeight: 800 }}>{stats.orders}</div></div>
-        <div style={cardStyle}><div style={{ color: 'var(--color-text-muted)', marginBottom: 6 }}>Khách hàng</div><div style={{ fontSize: '1.7rem', fontWeight: 800 }}>{stats.users}</div></div>
-        <div style={cardStyle}><div style={{ color: 'var(--color-text-muted)', marginBottom: 6 }}>Doanh thu</div><div style={{ fontSize: '1.7rem', fontWeight: 800 }}>{formatVND(stats.revenue)}</div></div>
+      <div className="admin-stat-grid">
+        {statCards.map((card) => (
+          <div className="admin-stat-card" key={card.label}>
+            <div className="admin-stat-card-icon" style={{ background: `${card.color}15`, color: card.color }}>
+              {card.icon}
+            </div>
+            <div className="admin-stat-card-info">
+              <div className="admin-stat-card-label">{card.label}</div>
+              <div className="admin-stat-card-value">{card.value}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div style={{ ...cardStyle, padding: 'var(--space-lg)', overflowX: 'auto' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 'var(--space-md)' }}>Đơn hàng gần đây</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <th style={thStyle}>Mã đơn</th>
-              <th style={thStyle}>Khách hàng</th>
-              <th style={thStyle}>Tổng tiền</th>
-              <th style={thStyle}>Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentOrders.map((order) => (
-              <tr key={order.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <td style={tdStyle}><code>{order.id.slice(0, 8)}</code></td>
-                <td style={tdStyle}>{order.shipping_name || order.user_id?.slice(0, 8)}</td>
-                <td style={tdStyle}><strong>{formatVND(order.total_amount)}</strong></td>
-                <td style={tdStyle}>
-                  <span style={{
-                    padding: '0.2rem 0.65rem',
-                    borderRadius: '999px',
-                    color: STATUS_COLORS[order.status] || 'var(--color-text-secondary)',
-                    background: `${STATUS_COLORS[order.status] || '#64748b'}15`,
-                    border: `1px solid ${STATUS_COLORS[order.status] || '#64748b'}40`,
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                  }}>
-                    {STATUS_LABELS[order.status] || order.status}
-                  </span>
-                </td>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Đơn hàng gần đây</h3>
+          <span className="admin-card-badge">{recentOrders.length} đơn</span>
+        </div>
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
               </tr>
-            ))}
-            {recentOrders.length === 0 && (
-              <tr><td style={tdStyle} colSpan={4}>Chưa có đơn hàng.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recentOrders.map((order) => (
+                <tr key={order.id}>
+                  <td><code>{order.id.slice(0, 8)}</code></td>
+                  <td>{order.shipping_name || order.user_id?.slice(0, 8)}</td>
+                  <td><strong>{formatVND(order.total_amount)}</strong></td>
+                  <td>
+                    <span className="admin-status-badge" style={{
+                      color: STATUS_COLORS[order.status] || '#64748b',
+                      background: `${STATUS_COLORS[order.status] || '#64748b'}15`,
+                      border: `1px solid ${STATUS_COLORS[order.status] || '#64748b'}40`,
+                    }}>
+                      {STATUS_LABELS[order.status] || order.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {recentOrders.length === 0 && (
+                <tr><td colSpan={4} className="admin-table-empty">Chưa có đơn hàng.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
+/* ========== Products Tab ========== */
 function ProductsTab({
   rows,
   categories,
@@ -656,120 +704,93 @@ function ProductsTab({
 
   return (
     <div className="fade-in" style={{ position: 'relative' }}>
-      <div style={{
-        background: 'var(--gradient-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-lg)',
-        overflowX: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Quản lý sản phẩm</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-            <span style={{ color: 'var(--color-text-muted)' }}>{rows.length} sản phẩm</span>
-            <button className="btn btn-primary btn-sm" onClick={onStartCreate}>+ Thêm sản phẩm</button>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            <h3>Quản lý sản phẩm</h3>
+            <span className="admin-card-badge">{rows.length} sản phẩm</span>
           </div>
+          <button className="btn btn-primary btn-sm" onClick={onStartCreate}>+ Thêm sản phẩm</button>
         </div>
 
-        <input
-          className="form-control"
-          placeholder="Tìm theo tên, slug hoặc danh mục"
-          value={productSearch}
-          onChange={(e) => setProductSearch(e.target.value)}
-          style={{ maxWidth: '420px', marginBottom: 'var(--space-lg)' }}
-        />
+        <div style={{ padding: '0 var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+          <input
+            className="form-control"
+            placeholder="Tìm theo tên, slug hoặc danh mục"
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            style={{ maxWidth: '420px' }}
+          />
+        </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <th style={thStyle}>Sản phẩm</th>
-              <th style={thStyle}>Danh mục</th>
-              <th style={thStyle}>Giá</th>
-              <th style={thStyle}>Kho</th>
-              <th style={thStyle}>Trạng thái</th>
-              <th style={thStyle}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((product) => (
-              <tr key={product.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <td style={tdStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                    <img src={product.image_url || 'https://placehold.co/48x48/f8fafc/334155?text=SP'} alt={product.name}
-                      style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--color-border)' }} />
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{product.name}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{product.slug}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={tdStyle}>{product.category_name}</td>
-                <td style={tdStyle}>
-                  <div style={{ fontWeight: 700 }}>{formatVND(product.price)}</div>
-                  {product.compare_price && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>
-                      {formatVND(product.compare_price)}
-                    </div>
-                  )}
-                </td>
-                <td style={tdStyle}>{product.stock}</td>
-                <td style={tdStyle}>
-                  <span style={{
-                    color: product.is_active ? 'var(--color-success)' : 'var(--color-danger)',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                  }}>
-                    {product.is_active ? 'Hoạt động' : 'Ẩn'}
-                  </span>
-                </td>
-                <td style={tdStyle}>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => onStartEdit(product)}>Sửa</button>
-                    <button className="btn btn-secondary btn-sm" style={{ color: 'var(--color-danger)' }} onClick={() => onDelete(product)}>Xóa</button>
-                  </div>
-                </td>
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Danh mục</th>
+                <th>Giá</th>
+                <th>Kho</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr><td style={tdStyle} colSpan={6}>Không có sản phẩm phù hợp.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((product) => (
+                <tr key={product.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                      <img src={product.image_url || 'https://placehold.co/48x48/f8fafc/334155?text=SP'} alt={product.name}
+                        style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--color-border)' }} />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{product.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{product.slug}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{product.category_name}</td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{formatVND(product.price)}</div>
+                    {product.compare_price && (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>
+                        {formatVND(product.compare_price)}
+                      </div>
+                    )}
+                  </td>
+                  <td>{product.stock}</td>
+                  <td>
+                    <span className="admin-status-badge" style={{
+                      color: product.is_active ? 'var(--color-success)' : 'var(--color-danger)',
+                      background: product.is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    }}>
+                      {product.is_active ? 'Hoạt động' : 'Ẩn'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => onStartEdit(product)}>Sửa</button>
+                      <button className="btn btn-secondary btn-sm" style={{ color: 'var(--color-danger)' }} onClick={() => onDelete(product)}>Xóa</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={6} className="admin-table-empty">Không có sản phẩm phù hợp.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {isPanelOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '70px',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(15, 23, 42, 0.35)',
-            zIndex: 60,
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-          onClick={handleClosePanel}
-        >
-          <div
-            style={{
-              width: 'min(520px, 100vw)',
-              height: '100%',
-              background: 'var(--color-bg-primary)',
-              borderLeft: '1px solid var(--color-border)',
-              padding: 'var(--space-lg)',
-              overflowY: 'auto',
-              boxShadow: '-18px 0 40px rgba(15, 23, 42, 0.22)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{editingProductId ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</h3>
-              <button className="btn btn-secondary btn-sm" onClick={handleClosePanel} disabled={productSubmitting}>Đóng</button>
+        <div className="admin-panel-overlay" onClick={handleClosePanel}>
+          <div className="admin-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-panel-header">
+              <h3>{editingProductId ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</h3>
+              <button className="admin-panel-close" onClick={handleClosePanel} disabled={productSubmitting}>✕</button>
             </div>
 
-            <form onSubmit={onSubmit}>
+            <form onSubmit={onSubmit} className="admin-panel-body">
               <div className="form-group">
                 <label>Tên sản phẩm</label>
                 <input className="form-control" value={productForm.name} onChange={(e) => onFieldChange('name', e.target.value)} required />
@@ -854,6 +875,7 @@ function ProductsTab({
   );
 }
 
+/* ========== Orders Tab ========== */
 function OrdersTab({
   rows,
   orderDrafts,
@@ -867,19 +889,15 @@ function OrdersTab({
 }) {
   return (
     <div className="fade-in">
-      <div style={{
-        background: 'var(--gradient-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-lg)',
-        overflowX: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Quản lý đơn hàng</h2>
-          <span style={{ color: 'var(--color-text-muted)' }}>{rows.length} đơn hàng</span>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            <h3>Quản lý đơn hàng</h3>
+            <span className="admin-card-badge">{rows.length} đơn hàng</span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-sm)', padding: '0 var(--space-lg)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
           <input
             className="form-control"
             placeholder="Tìm theo mã đơn, tên hoặc SĐT"
@@ -895,177 +913,163 @@ function OrdersTab({
           </select>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <th style={thStyle}>Mã đơn</th>
-              <th style={thStyle}>Khách hàng</th>
-              <th style={thStyle}>Sản phẩm</th>
-              <th style={thStyle}>Tổng tiền</th>
-              <th style={thStyle}>Trạng thái</th>
-              <th style={thStyle}>Cập nhật</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((order) => (
-              <tr key={order.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <td style={tdStyle}><code style={{ fontSize: '0.8rem' }}>{order.id.slice(0, 8)}</code></td>
-                <td style={tdStyle}>
-                  <div style={{ fontWeight: 600 }}>{order.shipping_name || '-'}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{order.shipping_phone || ''}</div>
-                </td>
-                <td style={tdStyle}>
-                  {(order.items || []).slice(0, 3).map((item) => (
-                    <div key={item.id} style={{ fontSize: '0.82rem' }}>{item.product_name} x{item.quantity}</div>
-                  ))}
-                  {(order.items || []).length > 3 && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>+{order.items.length - 3} sản phẩm</div>
-                  )}
-                </td>
-                <td style={tdStyle}><strong>{formatVND(order.total_amount)}</strong></td>
-                <td style={tdStyle}>
-                  <select
-                    className="form-control"
-                    value={orderDrafts[order.id] || order.status}
-                    onChange={(e) => onDraftChange(order.id, e.target.value)}
-                    style={{ minWidth: '160px' }}
-                  >
-                    {ORDER_STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>{STATUS_LABELS[status]}</option>
-                    ))}
-                  </select>
-                </td>
-                <td style={tdStyle}>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    disabled={orderUpdatingId === order.id}
-                    onClick={() => onSaveStatus(order.id)}
-                  >
-                    {orderUpdatingId === order.id ? 'Đang lưu...' : 'Lưu'}
-                  </button>
-                </td>
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>Sản phẩm</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Cập nhật</th>
               </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr><td style={tdStyle} colSpan={6}>Không tìm thấy đơn hàng phù hợp.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((order) => (
+                <tr key={order.id}>
+                  <td><code style={{ fontSize: '0.8rem' }}>{order.id.slice(0, 8)}</code></td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{order.shipping_name || '-'}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{order.shipping_phone || ''}</div>
+                  </td>
+                  <td>
+                    {(order.items || []).slice(0, 3).map((item) => (
+                      <div key={item.id} style={{ fontSize: '0.82rem' }}>{item.product_name} x{item.quantity}</div>
+                    ))}
+                    {(order.items || []).length > 3 && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>+{order.items.length - 3} sản phẩm</div>
+                    )}
+                  </td>
+                  <td><strong>{formatVND(order.total_amount)}</strong></td>
+                  <td>
+                    <select
+                      className="form-control"
+                      value={orderDrafts[order.id] || order.status}
+                      onChange={(e) => onDraftChange(order.id, e.target.value)}
+                      style={{ minWidth: '150px', fontSize: '0.85rem' }}
+                    >
+                      {ORDER_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>{STATUS_LABELS[status]}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={orderUpdatingId === order.id}
+                      onClick={() => onSaveStatus(order.id)}
+                    >
+                      {orderUpdatingId === order.id ? 'Đang lưu...' : 'Lưu'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={6} className="admin-table-empty">Không tìm thấy đơn hàng phù hợp.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
+/* ========== Customers Tab ========== */
 function CustomersTab({ rows, customerSearch, setCustomerSearch, customerUpdatingId, onToggleFlag }) {
   return (
     <div className="fade-in">
-      <div style={{
-        background: 'var(--gradient-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-lg)',
-        overflowX: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Quản lý khách hàng</h2>
-          <span style={{ color: 'var(--color-text-muted)' }}>{rows.length} khách hàng</span>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            <h3>Quản lý khách hàng</h3>
+            <span className="admin-card-badge">{rows.length} khách hàng</span>
+          </div>
         </div>
 
-        <input
-          className="form-control"
-          placeholder="Tìm theo tên, email, số điện thoại"
-          value={customerSearch}
-          onChange={(e) => setCustomerSearch(e.target.value)}
-          style={{ maxWidth: '420px', marginBottom: 'var(--space-lg)' }}
-        />
+        <div style={{ padding: '0 var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+          <input
+            className="form-control"
+            placeholder="Tìm theo tên, email, số điện thoại"
+            value={customerSearch}
+            onChange={(e) => setCustomerSearch(e.target.value)}
+            style={{ maxWidth: '420px' }}
+          />
+        </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <th style={thStyle}>Khách hàng</th>
-              <th style={thStyle}>Liên hệ</th>
-              <th style={thStyle}>Đơn hàng</th>
-              <th style={thStyle}>Chi tiêu</th>
-              <th style={thStyle}>Role</th>
-              <th style={thStyle}>Trạng thái</th>
-              <th style={thStyle}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((customer) => (
-              <tr key={customer.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <td style={tdStyle}>
-                  <div style={{ fontWeight: 700 }}>{getUserDisplayName(customer)}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{customer.username || customer.id.slice(0, 8)}</div>
-                </td>
-                <td style={tdStyle}>
-                  <div>{customer.email || '-'}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{customer.phone || '-'}</div>
-                </td>
-                <td style={tdStyle}>{customer.orderCount || 0}</td>
-                <td style={tdStyle}><strong>{formatVND(customer.totalSpent || 0)}</strong></td>
-                <td style={tdStyle}>
-                  <span style={{
-                    color: customer.is_staff ? 'var(--color-primary-dark)' : 'var(--color-text-secondary)',
-                    fontWeight: 700,
-                  }}>
-                    {customer.is_staff ? 'Admin' : 'Customer'}
-                  </span>
-                </td>
-                <td style={tdStyle}>
-                  <span style={{
-                    color: customer.is_active ? 'var(--color-success)' : 'var(--color-danger)',
-                    fontWeight: 700,
-                  }}>
-                    {customer.is_active ? 'Active' : 'Blocked'}
-                  </span>
-                </td>
-                <td style={tdStyle}>
-                  <div style={{ display: 'flex', gap: '0.45rem' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      disabled={customerUpdatingId === customer.id}
-                      onClick={() => onToggleFlag(customer, 'is_staff')}
-                    >
-                      {customer.is_staff ? 'Bỏ admin' : 'Cấp admin'}
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      style={{ color: customer.is_active ? 'var(--color-danger)' : 'var(--color-success)' }}
-                      disabled={customerUpdatingId === customer.id}
-                      onClick={() => onToggleFlag(customer, 'is_active')}
-                    >
-                      {customer.is_active ? 'Khóa' : 'Mở khóa'}
-                    </button>
-                  </div>
-                </td>
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Khách hàng</th>
+                <th>Liên hệ</th>
+                <th>Đơn hàng</th>
+                <th>Chi tiêu</th>
+                <th>Role</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr><td style={tdStyle} colSpan={7}>Không tìm thấy khách hàng phù hợp.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((customer) => (
+                <tr key={customer.id}>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{getUserDisplayName(customer)}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{customer.username || customer.id.slice(0, 8)}</div>
+                  </td>
+                  <td>
+                    <div>{customer.email || '-'}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{customer.phone || '-'}</div>
+                  </td>
+                  <td>{customer.orderCount || 0}</td>
+                  <td><strong>{formatVND(customer.totalSpent || 0)}</strong></td>
+                  <td>
+                    <span className="admin-status-badge" style={{
+                      color: customer.is_staff ? '#3b82f6' : '#64748b',
+                      background: customer.is_staff ? 'rgba(59, 130, 246, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                    }}>
+                      {customer.is_staff ? 'Admin' : 'Customer'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="admin-status-badge" style={{
+                      color: customer.is_active ? 'var(--color-success)' : 'var(--color-danger)',
+                      background: customer.is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    }}>
+                      {customer.is_active ? 'Active' : 'Blocked'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.45rem' }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        disabled={customerUpdatingId === customer.id}
+                        onClick={() => onToggleFlag(customer, 'is_staff')}
+                      >
+                        {customer.is_staff ? 'Bỏ admin' : 'Cấp admin'}
+                      </button>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        style={{ color: customer.is_active ? 'var(--color-danger)' : 'var(--color-success)' }}
+                        disabled={customerUpdatingId === customer.id}
+                        onClick={() => onToggleFlag(customer, 'is_active')}
+                      >
+                        {customer.is_active ? 'Khóa' : 'Mở khóa'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={7} className="admin-table-empty">Không tìm thấy khách hàng phù hợp.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
-
-const thStyle = {
-  padding: '0.75rem 1rem',
-  textAlign: 'left',
-  fontSize: '0.82rem',
-  fontWeight: 700,
-  color: 'var(--color-text-muted)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-};
-
-const tdStyle = {
-  padding: '0.75rem 1rem',
-  fontSize: '0.9rem',
-  color: 'var(--color-text-primary)',
-  verticalAlign: 'top',
-};
 
 export default AdminPage;

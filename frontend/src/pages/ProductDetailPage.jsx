@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatVND } from '../utils/currency.js';
@@ -35,53 +35,98 @@ function ProductDetailPage({ setCartCount }) {
   if (!product) return <div className="empty-state" style={{ paddingTop: '150px' }}><h3>Không tìm thấy sản phẩm</h3></div>;
 
   return (
-    <div className="section" style={{ paddingTop: '100px', minHeight: '100vh' }}>
-      <div className="container fade-in">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3xl)', alignItems: 'start' }}>
-          <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-            <img src={product.image_url || `https://placehold.co/600x600/1a1a2e/eee?text=${encodeURIComponent(product.name)}`}
-              alt={product.name} style={{ width: '100%', height: '500px', objectFit: 'cover' }} />
-          </div>
-          <div>
-            <div className="product-card-category" style={{ fontSize: '0.85rem', marginBottom: 'var(--space-sm)' }}>{product.category?.name}</div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 'var(--space-md)' }}>{product.name}</h1>
-            <div className="product-card-rating" style={{ fontSize: '1rem', marginBottom: 'var(--space-lg)' }}>
-              <span className="stars">{renderStars(product.rating)}</span>
-              <span>{product.rating} ({product.num_reviews} đánh giá)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--color-text-bright)' }}>{formatVND(product.price)}</span>
-              {product.compare_price && (
-                <>
-                  <span style={{ fontSize: '1.2rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>{formatVND(product.compare_price)}</span>
-                  {product.discount_percent > 0 && (
-                    <span style={{ padding: '0.3rem 0.8rem', background: 'rgba(255, 71, 87, 0.15)', color: 'var(--color-danger)', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', fontWeight: 700 }}>
-                      Tiết kiệm {product.discount_percent}%
-                    </span>
-                  )}
-                </>
+    <div className="product-detail-page">
+      <div className="container">
+        {/* Breadcrumb */}
+        <div className="breadcrumb">
+          <Link to="/">Trang chủ</Link>
+          <span className="breadcrumb-sep">/</span>
+          <Link to="/products">Sản phẩm</Link>
+          <span className="breadcrumb-sep">/</span>
+          <span>{product.name}</span>
+        </div>
+
+        <div className="product-detail-card">
+          <div className="product-detail-grid">
+            {/* Image */}
+            <div className="product-detail-image">
+              <img src={product.image_url || `https://placehold.co/600x600/f8fafc/334155?text=${encodeURIComponent(product.name)}`}
+                alt={product.name} />
+              {product.discount_percent > 0 && (
+                <div className="product-detail-discount">-{product.discount_percent}%</div>
               )}
             </div>
-            <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.8, marginBottom: 'var(--space-xl)' }}>{product.description}</p>
-            <div style={{
-              padding: 'var(--space-md) var(--space-lg)',
-              background: product.is_in_stock ? 'rgba(0, 201, 167, 0.08)' : 'rgba(255, 71, 87, 0.08)',
-              border: `1px solid ${product.is_in_stock ? 'rgba(0, 201, 167, 0.2)' : 'rgba(255, 71, 87, 0.2)'}`,
-              borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-xl)', fontSize: '0.9rem', fontWeight: 600,
-              color: product.is_in_stock ? 'var(--color-success)' : 'var(--color-danger)',
-            }}>
-              {product.is_in_stock ? `✓ Còn hàng (${product.stock} sản phẩm)` : '✕ Hết hàng'}
-            </div>
-            {message && <div className="alert alert-success">{message}</div>}
-            {error && <div className="alert alert-error">{error}</div>}
-            <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center' }}>
-              <div className="quantity-control">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
-                <span>{quantity}</span>
-                <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}>+</button>
+
+            {/* Info */}
+            <div className="product-detail-info">
+              {product.category?.name && (
+                <div className="product-detail-category">{product.category.name}</div>
+              )}
+              <h1 className="product-detail-name">{product.name}</h1>
+              
+              <div className="product-detail-meta">
+                <div className="product-detail-rating">
+                  <span className="stars">{renderStars(product.rating)}</span>
+                  <span className="rating-text">{product.rating}</span>
+                </div>
+                <span className="product-detail-divider">|</span>
+                <span className="product-detail-reviews">{product.num_reviews} đánh giá</span>
+                <span className="product-detail-divider">|</span>
+                <span className="product-detail-sold">Đã bán {product.num_reviews}</span>
               </div>
-              <button className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleAddToCart}
-                disabled={!product.is_in_stock} id="add-to-cart-button">🛒 Thêm vào giỏ hàng</button>
+
+              <div className="product-detail-price-box">
+                <span className="product-detail-price">{formatVND(product.price)}</span>
+                {product.compare_price && (
+                  <>
+                    <span className="product-detail-compare">{formatVND(product.compare_price)}</span>
+                    {product.discount_percent > 0 && (
+                      <span className="product-detail-save">Tiết kiệm {product.discount_percent}%</span>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="product-detail-desc">
+                <h3>Mô tả sản phẩm</h3>
+                <p>{product.description}</p>
+              </div>
+
+              <div className={`product-detail-stock ${product.is_in_stock ? 'in-stock' : 'out-stock'}`}>
+                {product.is_in_stock ? `✓ Còn hàng (${product.stock} sản phẩm)` : '✕ Hết hàng'}
+              </div>
+
+              {message && <div className="alert alert-success">{message}</div>}
+              {error && <div className="alert alert-error">{error}</div>}
+
+              <div className="product-detail-actions">
+                <div className="product-detail-qty">
+                  <span>Số lượng</span>
+                  <div className="quantity-control">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+                    <span>{quantity}</span>
+                    <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}>+</button>
+                  </div>
+                </div>
+                <div className="product-detail-btns">
+                  <button className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleAddToCart}
+                    disabled={!product.is_in_stock} id="add-to-cart-button">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight: 8, verticalAlign: 'middle'}}>
+                      <circle cx="9" cy="20" r="1"></circle>
+                      <circle cx="18" cy="20" r="1"></circle>
+                      <path d="M2 3h2l2.7 11.5a2 2 0 0 0 2 1.5h8.9a2 2 0 0 0 1.9-1.4L22 7H6"></path>
+                    </svg>
+                    Thêm vào giỏ hàng
+                  </button>
+                </div>
+              </div>
+
+              {/* Trust badges */}
+              <div className="product-detail-trust">
+                <div className="trust-item">🚚 Miễn phí vận chuyển</div>
+                <div className="trust-item">🔄 Đổi trả 30 ngày</div>
+                <div className="trust-item">🛡️ Bảo hành chính hãng</div>
+              </div>
             </div>
           </div>
         </div>

@@ -71,9 +71,13 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Inter-service URLs
 PRODUCT_SERVICE_URL = os.environ.get('PRODUCT_SERVICE_URL', 'http://product-service:8000')
+USER_SERVICE_URL = os.environ.get('USER_SERVICE_URL', 'http://user-service:8000')
 
-# Gemini API
+# Google Gemini API Key
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
+# ChromaDB storage path
+CHROMA_DB_PATH = os.environ.get('CHROMA_DB_PATH', str(BASE_DIR / 'chroma_data'))
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Ho_Chi_Minh'
