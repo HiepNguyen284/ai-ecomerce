@@ -219,6 +219,28 @@ class ApiService {
       headers: this.getHeaders(true),
     });
   }
+
+  // Chatbot
+  async sendChatMessage(message, sessionId = '') {
+    return this.request(`${this.baseUrl}/chatbot/chat/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ message, session_id: sessionId }),
+    });
+  }
+
+  async getChatSuggestions() {
+    return this.request(`${this.baseUrl}/chatbot/suggestions/`, {
+      headers: this.getHeaders(),
+    });
+  }
+
+  async clearChatHistory(sessionId) {
+    return this.request(`${this.baseUrl}/chatbot/clear/${sessionId}/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+  }
 }
 
 export default new ApiService();

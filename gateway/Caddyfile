@@ -29,6 +29,12 @@
         reverse_proxy payment-service:8000
     }
 
+    # API Gateway - Chatbot Service
+    handle /api/chatbot/* {
+        uri strip_prefix /api
+        reverse_proxy chatbot-service:8000
+    }
+
     # Health check endpoint
     handle /health {
         respond "OK" 200

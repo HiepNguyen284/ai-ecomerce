@@ -20,6 +20,7 @@ services:
       - cart-service
       - order-service
       - payment-service
+      - chatbot-service
       - frontend
     networks:
       - ecommerce-network
@@ -205,6 +206,36 @@ services:
       - ecommerce-network
     restart: unless-stopped
 
+  # ========================
+  # Chatbot Service
+  # ========================
+  chatbot-service:
+    build:
+      context: ./services/chatbot-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-chatbot-service
+    environment:
+      - DATABASE_NAME=chatbot_db
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_HOST=ecommerce-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-chatbot-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./services/chatbot-service:/app
+    depends_on:
+      ecommerce-db:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
 # ========================
 # Volumes
 # ========================
@@ -219,3 +250,4 @@ volumes:
 networks:
   ecommerce-network:
     driver: bridge
+

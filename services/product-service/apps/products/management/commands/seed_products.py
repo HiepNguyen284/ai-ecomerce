@@ -440,8 +440,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--per-category',
             type=int,
-            default=20,
-            help='Số lượng sản phẩm mỗi danh mục (mặc định: 20, tổng: 240).',
+            default=2,
+            help='Số lượng sản phẩm mỗi danh mục (mặc định: 2, tổng: 24).',
         )
         parser.add_argument(
             '--seed',
