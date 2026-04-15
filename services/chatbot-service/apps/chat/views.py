@@ -9,6 +9,7 @@ from .serializers import (
     ConversationSerializer,
 )
 from . import rag_engine
+from .knowledge_base import fetch_all_categories
 
 logger = logging.getLogger(__name__)
 
@@ -125,16 +126,51 @@ class SuggestionsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        suggestions = [
-            'Tư vấn laptop để làm việc văn phòng',
-            'Điện thoại chụp ảnh đẹp dưới 15 triệu',
-            'Tai nghe chống ồn tốt nhất',
-            'Đồng hồ thông minh cho thể thao',
-            'Sản phẩm gaming đáng mua nhất',
-            'Giày chạy bộ tốt cho người mới',
-            'Đồ gia dụng thông minh nên mua',
-            'Sách lập trình hay nhất',
+        base_suggestions = [
+            'Gợi ý sản phẩm đang giảm giá mạnh nhất',
+            'Tư vấn sản phẩm phù hợp ngân sách dưới 3 triệu',
+            'Sản phẩm nào được đánh giá cao và còn hàng?',
+            'Cho mình top sản phẩm bán chạy hiện tại',
         ]
+
+        category_suggestions = []
+        categories = fetch_all_categories()
+        category_names = []
+
+        for item in categories:
+            if isinstance(item, dict):
+                raw_name = str(item.get('name') or item.get('slug') or '').strip()
+            else:
+                raw_name = str(item or '').strip()
+
+            if not raw_name:
+                continue
+
+            if '-' in raw_name and raw_name.lower() == raw_name:
+                raw_name = raw_name.replace('-', ' ')
+
+            category_name = raw_name[:1].upper() + raw_name[1:]
+            if category_name not in category_names:
+                category_names.append(category_name)
+
+        for category_name in category_names[:6]:
+            category_suggestions.append(f'Tư vấn sản phẩm {category_name} đáng mua nhất')
+
+        for category_name in category_names[:4]:
+            category_suggestions.append(f'Trong danh mục {category_name}, sản phẩm nào dưới 5 triệu?')
+
+        suggestions = []
+        for suggestion in base_suggestions + category_suggestions:
+            if suggestion not in suggestions:
+                suggestions.append(suggestion)
+
+        if not suggestions:
+            suggestions = [
+                'Tư vấn sản phẩm phù hợp nhu cầu hàng ngày',
+                'Sản phẩm nào đang có giá tốt nhất?',
+                'Gợi ý giúp mình vài sản phẩm đáng mua',
+            ]
+
         return Response({'suggestions': suggestions})
 
 

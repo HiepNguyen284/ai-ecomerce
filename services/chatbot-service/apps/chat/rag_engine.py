@@ -65,6 +65,25 @@ def _initialize_neo4j():
                 logger.error(f'Error initializing Neo4j index/constraint: {e}')
 
 
+def clear_knowledge_graph():
+    """
+    Remove all nodes/relationships in Neo4j.
+    Returns the number of deleted nodes (before deletion).
+    """
+    driver = get_neo4j_driver()
+    deleted_nodes = 0
+
+    with driver.session() as session:
+        count_record = session.run('MATCH (n) RETURN count(n) AS cnt').single()
+        if count_record:
+            deleted_nodes = int(count_record['cnt'])
+
+        session.run('MATCH (n) DETACH DELETE n')
+
+    logger.info(f'Cleared Neo4j graph. Deleted nodes: {deleted_nodes}')
+    return deleted_nodes
+
+
 def get_embedding_model():
     """Lazy-load the sentence transformer embedding model."""
     global _embedding_model
@@ -221,12 +240,12 @@ SYSTEM_PROMPT = """Bạn là trợ lý tư vấn mua sắm AI của cửa hàng 
 Nhiệm vụ của bạn là giúp khách hàng tìm và lựa chọn sản phẩm phù hợp nhất.
 
 QUY TẮC BẮT BUỘC:
-1. CHỈ tư vấn dựa trên danh sách sản phẩm được cung cấp trong phần "SẢN PHẨM TRONG CỬA HÀNG" bên dưới.
+1. CHỈ tư vấn dựa trên danh sách sản phẩm được cung cấp trong phần "SẢN PHẨM TRONG CỬA HÀNG" bên dưới. Bạn PHẢI trả về chính xác tên và giá sản phẩm được cung cấp, chú ý giá của sản phẩm có đơn vị là VNĐ.
 2. TUYỆT ĐỐI KHÔNG được bịa ra sản phẩm, giá cả, thông số, hoặc đánh giá không có trong dữ liệu.
-3. Khi giới thiệu sản phẩm, PHẢI sử dụng CHÍNH XÁC tên, giá, đánh giá từ dữ liệu được cung cấp. KHÔNG được thay đổi hay làm tròn giá.
+3. Khi giới thiệu sản phẩm, PHẢI sử dụng CHÍNH XÁC tên, giá, đánh giá từ dữ liệu được cung cấp. KHÔNG được thay đổi hay làm tròn giá (ví dụ: lấy nguyên giá 260000 VNĐ). KHÔNG tự sáng tạo dữ liệu.
 4. Nếu không có sản phẩm nào phù hợp trong danh sách, hãy nói rõ: "Hiện tại cửa hàng chưa có sản phẩm phù hợp với yêu cầu của bạn" và gợi ý khách tìm theo hướng khác.
 5. KHÔNG được tự suy luận thêm thông số kỹ thuật chi tiết (RAM, CPU, camera, v.v.) nếu chúng KHÔNG được ghi trong phần mô tả sản phẩm.
-6. Trả lời bằng tiếng Việt, thân thiện và chuyên nghiệp.
+6. Trả lời bằng tiếng Việt, thân thiện và chuyên nghiệp. KHÔNG trả lời bằng tiếng Anh, yêu cầu đầu ra bắt buộc luôn là tiếng Việt.
 7. Khi đề cập đến sản phẩm, bọc tên trong dấu ** để in đậm, ví dụ: **Tên sản phẩm**.
 8. So sánh sản phẩm nếu có nhiều lựa chọn phù hợp, nhưng CHỈ so sánh dựa trên thông tin có sẵn.
 9. Nếu khách hỏi về chính sách đổi trả, bảo hành, vận chuyển:

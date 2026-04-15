@@ -243,58 +243,45 @@ class ApiService {
     });
   }
 
-  // Analytics
-  async getAnalyticsDashboard() {
-    return this.request(`${this.baseUrl}/analytics/dashboard/`, {
-      headers: this.getHeaders(true),
-    });
+  // ==================
+  // Recommendations
+  // ==================
+
+  getSessionId() {
+    let sessionId = localStorage.getItem('rec_session_id');
+    if (!sessionId) {
+      sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('rec_session_id', sessionId);
+    }
+    return sessionId;
   }
 
-  async getAnalyticsCustomers(params = '') {
-    return this.request(`${this.baseUrl}/analytics/customers/${params ? '?' + params : ''}`, {
-      headers: this.getHeaders(true),
-    });
+  async trackProductView(productId) {
+    const session_id = this.getSessionId();
+    try {
+      return await this.request(`${this.baseUrl}/products/recommendations/track/`, {
+        method: 'POST',
+        headers: this.getHeaders(true),
+        body: JSON.stringify({ product_id: productId, session_id }),
+      });
+    } catch (err) {
+      // Silently fail tracking - don't break user experience
+      console.debug('Track view failed:', err);
+      return null;
+    }
   }
 
-  async getAnalyticsCustomerDetail(customerId) {
-    return this.request(`${this.baseUrl}/analytics/customers/${customerId}/`, {
-      headers: this.getHeaders(true),
-    });
+  async getRecommendations() {
+    const session_id = this.getSessionId();
+    return this.request(
+      `${this.baseUrl}/products/recommendations/?session_id=${encodeURIComponent(session_id)}`,
+      { headers: this.getHeaders(true) }
+    );
   }
 
-  async getAnalyticsSegments() {
-    return this.request(`${this.baseUrl}/analytics/segments/`, {
-      headers: this.getHeaders(true),
-    });
-  }
-
-  async getAnalyticsSegmentChart() {
-    return this.request(`${this.baseUrl}/analytics/charts/segments/`, {
-      headers: this.getHeaders(true),
-    });
-  }
-
-  async getAnalyticsChurnChart() {
-    return this.request(`${this.baseUrl}/analytics/charts/churn/`, {
-      headers: this.getHeaders(true),
-    });
-  }
-
-  async getAnalyticsRFMChart() {
-    return this.request(`${this.baseUrl}/analytics/charts/rfm/`, {
-      headers: this.getHeaders(true),
-    });
-  }
-
-  async getAnalyticsTrends() {
-    return this.request(`${this.baseUrl}/analytics/charts/trends/`, {
-      headers: this.getHeaders(true),
-    });
-  }
-
-  async getAnalyticsCategories() {
-    return this.request(`${this.baseUrl}/analytics/charts/categories/`, {
-      headers: this.getHeaders(true),
+  async getTrendingCategories() {
+    return this.request(`${this.baseUrl}/products/recommendations/trending/`, {
+      headers: this.getHeaders(),
     });
   }
 }

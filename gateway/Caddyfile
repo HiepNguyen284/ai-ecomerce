@@ -35,12 +35,6 @@
         reverse_proxy chatbot-service:8000
     }
 
-    # API Gateway - Analytics Service
-    handle /api/analytics/* {
-        uri strip_prefix /api
-        reverse_proxy analytics-service:8000
-    }
-
     # Health check endpoint
     handle /health {
         respond "OK" 200

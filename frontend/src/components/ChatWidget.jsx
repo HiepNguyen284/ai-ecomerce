@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -49,9 +50,10 @@ export default function ChatWidget() {
         .then(data => setSuggestions(data.suggestions || []))
         .catch(() => {
           setSuggestions([
-            'Tư vấn laptop cho văn phòng',
-            'Điện thoại chụp ảnh đẹp',
-            'Tai nghe chống ồn tốt nhất',
+            'Gợi ý sản phẩm đang giảm giá mạnh nhất',
+            'Tư vấn sản phẩm phù hợp ngân sách dưới 3 triệu',
+            'Sản phẩm nào được đánh giá cao và còn hàng?',
+            'Cho mình top sản phẩm bán chạy hiện tại',
           ]);
         });
     }
@@ -235,11 +237,14 @@ export default function ChatWidget() {
                 {msg.products && msg.products.length > 0 && (
                   <div className="chatbot-products">
                     {msg.products.map((p, i) => (
-                      <a
+                      <Link
                         key={i}
-                        href={`/products/${p.slug}`}
+                        to={`/products/${p.slug}`}
                         className="chatbot-product-card"
-                        target="_self"
+                        onClick={(e) => {
+                          setIsOpen(false);
+                          window.scrollTo(0, 0);
+                        }}
                       >
                         <div className="chatbot-product-img">
                           {p.image_url ? (
@@ -260,7 +265,7 @@ export default function ChatWidget() {
                             )}
                           </span>
                         </div>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 )}

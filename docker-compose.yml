@@ -21,7 +21,6 @@ services:
       - order-service
       - payment-service
       - chatbot-service
-      - analytics-service
       - frontend
     networks:
       - ecommerce-network
@@ -244,38 +243,6 @@ services:
     restart: unless-stopped
 
   # ========================
-  # Analytics Service (Deep Learning)
-  # ========================
-  analytics-service:
-    build:
-      context: ./services/analytics-service
-      dockerfile: Dockerfile
-    container_name: ecommerce-analytics-service
-    environment:
-      - DATABASE_NAME=analytics_db
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=postgres
-      - DATABASE_HOST=ecommerce-db
-      - DATABASE_PORT=5432
-      - SECRET_KEY=django-analytics-secret-key-2026-ecommerce
-      - DEBUG=1
-      - ALLOWED_HOSTS=*
-      - USER_SERVICE_URL=http://user-service:8000
-      - PRODUCT_SERVICE_URL=http://product-service:8000
-      - ORDER_SERVICE_URL=http://order-service:8000
-      - CART_SERVICE_URL=http://cart-service:8000
-      - PAYMENT_SERVICE_URL=http://payment-service:8000
-    volumes:
-      - ./services/analytics-service:/app
-      - analytics_models:/app/ml_models
-    depends_on:
-      ecommerce-db:
-        condition: service_healthy
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-
-  # ========================
   # Neo4j Graph Database
   # ========================
   neo4j-db:
@@ -305,7 +272,6 @@ volumes:
   caddy_config:
   postgres_data:
   neo4j_data:
-  analytics_models:
 
 # ========================
 # Networks

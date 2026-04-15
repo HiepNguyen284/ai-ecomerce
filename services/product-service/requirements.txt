@@ -4,3 +4,4 @@ psycopg2-binary==2.9.9
 django-cors-headers==4.4.0
 django-filter==24.3
 requests==2.32.3
+numpy==2.1.3

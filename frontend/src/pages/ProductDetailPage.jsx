@@ -13,7 +13,17 @@ function ProductDetailPage({ setCartCount }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.getProduct(slug).then(setProduct).catch(() => setError('Không tìm thấy sản phẩm.')).finally(() => setLoading(false));
+    setLoading(true);
+    setQuantity(1);
+    setMessage('');
+    setError('');
+    api.getProduct(slug).then((data) => {
+      setProduct(data);
+      // Track this product view for AI recommendations
+      if (data && data.id) {
+        api.trackProductView(data.id);
+      }
+    }).catch(() => setError('Không tìm thấy sản phẩm.')).finally(() => setLoading(false));
   }, [slug]);
 
   const handleAddToCart = async () => {

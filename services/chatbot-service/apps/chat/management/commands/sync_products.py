@@ -19,11 +19,24 @@ class Command(BaseCommand):
             default=3,
             help='Maximum retries if product-service is not ready',
         )
+        parser.add_argument(
+            '--clear-existing',
+            action='store_true',
+            default=True,
+            help='Clear Neo4j graph before indexing new products (default: enabled)',
+        )
+        parser.add_argument(
+            '--no-clear-existing',
+            action='store_false',
+            dest='clear_existing',
+            help='Do not clear Neo4j graph before indexing',
+        )
 
     def handle(self, *args, **options):
         import time
 
         max_retries = options['max_retries']
+        clear_existing = options['clear_existing']
 
         for attempt in range(1, max_retries + 1):
             self.stdout.write(f'Attempt {attempt}/{max_retries}: Fetching products...')
@@ -46,6 +59,14 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f'Fetched {len(products)} products. Indexing into Neo4j...')
+
+        if clear_existing:
+            deleted_nodes = rag_engine.clear_knowledge_graph()
+            self.stdout.write(
+                self.style.WARNING(
+                    f'Cleared Neo4j graph before sync. Deleted nodes: {deleted_nodes}'
+                )
+            )
 
         count = rag_engine.index_products(products)
 
