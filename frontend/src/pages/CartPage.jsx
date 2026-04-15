@@ -40,8 +40,14 @@ function CartPage({ user, setCartCount, authReady = true }) {
     try {
       const order = await api.createOrder(orderForm);
       await api.createPayment({ order_id: order.id, method: 'cod' });
+      let clearedCart = null;
+      try {
+        clearedCart = await api.clearCart();
+      } catch {
+        clearedCart = null;
+      }
       setMessage('Đặt hàng thành công!');
-      setCart({ ...cart, items: [], total_items: 0, total_price: '0.00' });
+      setCart(clearedCart || { ...cart, items: [], total_items: 0, total_price: '0.00' });
       setCartCount(0); setShowCheckout(false);
       setTimeout(() => navigate('/orders'), 2000);
     } catch (err) { setError(err.error || 'Đặt hàng thất bại.'); }

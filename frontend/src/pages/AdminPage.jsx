@@ -112,6 +112,7 @@ function AdminPage({ user, authReady = true }) {
   const [productForm, setProductForm] = useState(PRODUCT_FORM_TEMPLATE);
   const [editingProductId, setEditingProductId] = useState(null);
   const [productSubmitting, setProductSubmitting] = useState(false);
+  const [isProductPanelOpen, setIsProductPanelOpen] = useState(false);
 
   const [orderDrafts, setOrderDrafts] = useState({});
   const [orderUpdatingId, setOrderUpdatingId] = useState(null);
@@ -210,12 +211,19 @@ function AdminPage({ user, authReady = true }) {
 
   const handleStartCreateProduct = () => {
     resetProductForm(categories[0]?.id || '');
+    setIsProductPanelOpen(true);
   };
 
   const handleStartEditProduct = (product) => {
     setEditingProductId(product.id);
     setProductForm(createFormFromProduct(product));
     setActiveTab('products');
+    setIsProductPanelOpen(true);
+  };
+
+  const handleCloseProductPanel = () => {
+    setIsProductPanelOpen(false);
+    resetProductForm(categories[0]?.id || '');
   };
 
   const handleProductFieldChange = (field, value) => {
@@ -276,6 +284,7 @@ function AdminPage({ user, authReady = true }) {
       }
 
       resetProductForm(categories[0]?.id || '');
+      setIsProductPanelOpen(false);
     } catch (err) {
       setError(parseErrorMessage(err, 'Không thể lưu sản phẩm.'));
     } finally {
@@ -296,6 +305,7 @@ function AdminPage({ user, authReady = true }) {
       });
       if (editingProductId === product.id) {
         resetProductForm(categories[0]?.id || '');
+        setIsProductPanelOpen(false);
       }
       setNotice({ type: 'success', text: 'Đã xóa sản phẩm.' });
     } catch (err) {
@@ -521,10 +531,12 @@ function AdminPage({ user, authReady = true }) {
             productForm={productForm}
             editingProductId={editingProductId}
             productSubmitting={productSubmitting}
+            isPanelOpen={isProductPanelOpen}
             onFieldChange={handleProductFieldChange}
             onSubmit={handleSubmitProduct}
             onStartCreate={handleStartCreateProduct}
             onStartEdit={handleStartEditProduct}
+            onClosePanel={handleCloseProductPanel}
             onDelete={handleDeleteProduct}
           />
         )}
@@ -629,180 +641,215 @@ function ProductsTab({
   productForm,
   editingProductId,
   productSubmitting,
+  isPanelOpen,
   onFieldChange,
   onSubmit,
   onStartCreate,
   onStartEdit,
+  onClosePanel,
   onDelete,
 }) {
+  const handleClosePanel = () => {
+    if (productSubmitting) return;
+    onClosePanel();
+  };
+
   return (
-    <div className="fade-in">
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 'var(--space-xl)' }}>
-        <div style={{
-          background: 'var(--gradient-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-lg)',
-          alignSelf: 'start',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>{editingProductId ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</h3>
-            <button className="btn btn-secondary btn-sm" onClick={onStartCreate}>Mới</button>
-          </div>
-
-          <form onSubmit={onSubmit}>
-            <div className="form-group">
-              <label>Tên sản phẩm</label>
-              <input className="form-control" value={productForm.name} onChange={(e) => onFieldChange('name', e.target.value)} required />
-            </div>
-
-            <div className="form-group">
-              <label>Slug (tùy chọn)</label>
-              <input className="form-control" value={productForm.slug} onChange={(e) => onFieldChange('slug', e.target.value)} placeholder="tu-dong-neu-bo-trong" />
-            </div>
-
-            <div className="form-group">
-              <label>Danh mục</label>
-              <select className="form-control" value={productForm.category} onChange={(e) => onFieldChange('category', e.target.value)} required>
-                <option value="">Chọn danh mục</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
-              <div className="form-group">
-                <label>Giá bán</label>
-                <input type="number" className="form-control" min="0" step="1000" value={productForm.price} onChange={(e) => onFieldChange('price', e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Giá gốc</label>
-                <input type="number" className="form-control" min="0" step="1000" value={productForm.compare_price} onChange={(e) => onFieldChange('compare_price', e.target.value)} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
-              <div className="form-group">
-                <label>Tồn kho</label>
-                <input type="number" className="form-control" min="0" value={productForm.stock} onChange={(e) => onFieldChange('stock', e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Đánh giá</label>
-                <input type="number" className="form-control" min="0" max="5" step="0.01" value={productForm.rating} onChange={(e) => onFieldChange('rating', e.target.value)} />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Số lượt đánh giá</label>
-              <input type="number" className="form-control" min="0" value={productForm.num_reviews} onChange={(e) => onFieldChange('num_reviews', e.target.value)} />
-            </div>
-
-            <div className="form-group">
-              <label>Ảnh sản phẩm (URL)</label>
-              <input className="form-control" value={productForm.image_url} onChange={(e) => onFieldChange('image_url', e.target.value)} />
-            </div>
-
-            <div className="form-group">
-              <label>Mô tả</label>
-              <textarea rows={3} className="form-control" value={productForm.description} onChange={(e) => onFieldChange('description', e.target.value)} />
-            </div>
-
-            <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input
-                  type="checkbox"
-                  checked={productForm.is_active}
-                  onChange={(e) => onFieldChange('is_active', e.target.checked)}
-                />
-                Sản phẩm đang hoạt động
-              </label>
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={productSubmitting}>
-              {productSubmitting ? 'Đang lưu...' : editingProductId ? 'Lưu thay đổi' : 'Tạo sản phẩm'}
-            </button>
-          </form>
-        </div>
-
-        <div style={{
-          background: 'var(--gradient-card)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-lg)',
-          overflowX: 'auto',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Quản lý sản phẩm</h2>
+    <div className="fade-in" style={{ position: 'relative' }}>
+      <div style={{
+        background: 'var(--gradient-card)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: 'var(--space-lg)',
+        overflowX: 'auto',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Quản lý sản phẩm</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
             <span style={{ color: 'var(--color-text-muted)' }}>{rows.length} sản phẩm</span>
+            <button className="btn btn-primary btn-sm" onClick={onStartCreate}>+ Thêm sản phẩm</button>
           </div>
-
-          <input
-            className="form-control"
-            placeholder="Tìm theo tên, slug hoặc danh mục"
-            value={productSearch}
-            onChange={(e) => setProductSearch(e.target.value)}
-            style={{ maxWidth: '420px', marginBottom: 'var(--space-lg)' }}
-          />
-
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <th style={thStyle}>Sản phẩm</th>
-                <th style={thStyle}>Danh mục</th>
-                <th style={thStyle}>Giá</th>
-                <th style={thStyle}>Kho</th>
-                <th style={thStyle}>Trạng thái</th>
-                <th style={thStyle}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((product) => (
-                <tr key={product.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <td style={tdStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                      <img src={product.image_url || 'https://placehold.co/48x48/f8fafc/334155?text=SP'} alt={product.name}
-                        style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--color-border)' }} />
-                      <div>
-                        <div style={{ fontWeight: 700 }}>{product.name}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{product.slug}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={tdStyle}>{product.category_name}</td>
-                  <td style={tdStyle}>
-                    <div style={{ fontWeight: 700 }}>{formatVND(product.price)}</div>
-                    {product.compare_price && (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>
-                        {formatVND(product.compare_price)}
-                      </div>
-                    )}
-                  </td>
-                  <td style={tdStyle}>{product.stock}</td>
-                  <td style={tdStyle}>
-                    <span style={{
-                      color: product.is_active ? 'var(--color-success)' : 'var(--color-danger)',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                    }}>
-                      {product.is_active ? 'Hoạt động' : 'Ẩn'}
-                    </span>
-                  </td>
-                  <td style={tdStyle}>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => onStartEdit(product)}>Sửa</button>
-                      <button className="btn btn-secondary btn-sm" style={{ color: 'var(--color-danger)' }} onClick={() => onDelete(product)}>Xóa</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr><td style={tdStyle} colSpan={6}>Không có sản phẩm phù hợp.</td></tr>
-              )}
-            </tbody>
-          </table>
         </div>
+
+        <input
+          className="form-control"
+          placeholder="Tìm theo tên, slug hoặc danh mục"
+          value={productSearch}
+          onChange={(e) => setProductSearch(e.target.value)}
+          style={{ maxWidth: '420px', marginBottom: 'var(--space-lg)' }}
+        />
+
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <th style={thStyle}>Sản phẩm</th>
+              <th style={thStyle}>Danh mục</th>
+              <th style={thStyle}>Giá</th>
+              <th style={thStyle}>Kho</th>
+              <th style={thStyle}>Trạng thái</th>
+              <th style={thStyle}>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((product) => (
+              <tr key={product.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <td style={tdStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                    <img src={product.image_url || 'https://placehold.co/48x48/f8fafc/334155?text=SP'} alt={product.name}
+                      style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--color-border)' }} />
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{product.name}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{product.slug}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style={tdStyle}>{product.category_name}</td>
+                <td style={tdStyle}>
+                  <div style={{ fontWeight: 700 }}>{formatVND(product.price)}</div>
+                  {product.compare_price && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>
+                      {formatVND(product.compare_price)}
+                    </div>
+                  )}
+                </td>
+                <td style={tdStyle}>{product.stock}</td>
+                <td style={tdStyle}>
+                  <span style={{
+                    color: product.is_active ? 'var(--color-success)' : 'var(--color-danger)',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                  }}>
+                    {product.is_active ? 'Hoạt động' : 'Ẩn'}
+                  </span>
+                </td>
+                <td style={tdStyle}>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => onStartEdit(product)}>Sửa</button>
+                    <button className="btn btn-secondary btn-sm" style={{ color: 'var(--color-danger)' }} onClick={() => onDelete(product)}>Xóa</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td style={tdStyle} colSpan={6}>Không có sản phẩm phù hợp.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {isPanelOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '70px',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.35)',
+            zIndex: 60,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+          onClick={handleClosePanel}
+        >
+          <div
+            style={{
+              width: 'min(520px, 100vw)',
+              height: '100%',
+              background: 'var(--color-bg-primary)',
+              borderLeft: '1px solid var(--color-border)',
+              padding: 'var(--space-lg)',
+              overflowY: 'auto',
+              boxShadow: '-18px 0 40px rgba(15, 23, 42, 0.22)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{editingProductId ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</h3>
+              <button className="btn btn-secondary btn-sm" onClick={handleClosePanel} disabled={productSubmitting}>Đóng</button>
+            </div>
+
+            <form onSubmit={onSubmit}>
+              <div className="form-group">
+                <label>Tên sản phẩm</label>
+                <input className="form-control" value={productForm.name} onChange={(e) => onFieldChange('name', e.target.value)} required />
+              </div>
+
+              <div className="form-group">
+                <label>Slug (tùy chọn)</label>
+                <input className="form-control" value={productForm.slug} onChange={(e) => onFieldChange('slug', e.target.value)} placeholder="tu-dong-neu-bo-trong" />
+              </div>
+
+              <div className="form-group">
+                <label>Danh mục</label>
+                <select className="form-control" value={productForm.category} onChange={(e) => onFieldChange('category', e.target.value)} required>
+                  <option value="">Chọn danh mục</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
+                <div className="form-group">
+                  <label>Giá bán</label>
+                  <input type="number" className="form-control" min="0" step="1000" value={productForm.price} onChange={(e) => onFieldChange('price', e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>Giá gốc</label>
+                  <input type="number" className="form-control" min="0" step="1000" value={productForm.compare_price} onChange={(e) => onFieldChange('compare_price', e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
+                <div className="form-group">
+                  <label>Tồn kho</label>
+                  <input type="number" className="form-control" min="0" value={productForm.stock} onChange={(e) => onFieldChange('stock', e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>Đánh giá</label>
+                  <input type="number" className="form-control" min="0" max="5" step="0.01" value={productForm.rating} onChange={(e) => onFieldChange('rating', e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Số lượt đánh giá</label>
+                <input type="number" className="form-control" min="0" value={productForm.num_reviews} onChange={(e) => onFieldChange('num_reviews', e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label>Ảnh sản phẩm (URL)</label>
+                <input className="form-control" value={productForm.image_url} onChange={(e) => onFieldChange('image_url', e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label>Mô tả</label>
+                <textarea rows={3} className="form-control" value={productForm.description} onChange={(e) => onFieldChange('description', e.target.value)} />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={productForm.is_active}
+                    onChange={(e) => onFieldChange('is_active', e.target.checked)}
+                  />
+                  Sản phẩm đang hoạt động
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-lg)' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={handleClosePanel} disabled={productSubmitting}>
+                  Hủy
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={productSubmitting}>
+                  {productSubmitting ? 'Đang lưu...' : editingProductId ? 'Lưu thay đổi' : 'Tạo sản phẩm'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

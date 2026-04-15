@@ -147,6 +147,13 @@ class ApiService {
     });
   }
 
+  async clearCart() {
+    return this.request(`${this.baseUrl}/cart/clear/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(true),
+    });
+  }
+
   // Orders
   async getOrders() {
     return this.request(`${this.baseUrl}/orders/`, {
