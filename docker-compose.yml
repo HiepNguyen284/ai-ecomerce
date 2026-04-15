@@ -1,0 +1,289 @@
+version: "3.9"
+
+services:
+  # ========================
+  # API Gateway - Caddy
+  # ========================
+  gateway:
+    image: caddy:2-alpine
+    container_name: ecommerce-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./gateway/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - user-service
+      - product-service
+      - cart-service
+      - order-service
+      - payment-service
+      - frontend
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # Frontend - React
+  # ========================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost/api
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # User Service
+  # ========================
+  user-db:
+    image: postgres:17-alpine
+    container_name: ecommerce-user-db
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user_admin
+      POSTGRES_PASSWORD: user_secret_2026
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_admin -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-user-service
+    environment:
+      - DATABASE_NAME=user_db
+      - DATABASE_USER=user_admin
+      - DATABASE_PASSWORD=user_secret_2026
+      - DATABASE_HOST=user-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-user-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+    volumes:
+      - ./services/user-service:/app
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # Product Service
+  # ========================
+  product-db:
+    image: postgres:17-alpine
+    container_name: ecommerce-product-db
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_admin
+      POSTGRES_PASSWORD: product_secret_2026
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_admin -d product_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-product-service
+    environment:
+      - DATABASE_NAME=product_db
+      - DATABASE_USER=product_admin
+      - DATABASE_PASSWORD=product_secret_2026
+      - DATABASE_HOST=product-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-product-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+    volumes:
+      - ./services/product-service:/app
+    depends_on:
+      product-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # Cart Service
+  # ========================
+  cart-db:
+    image: postgres:17-alpine
+    container_name: ecommerce-cart-db
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: cart_admin
+      POSTGRES_PASSWORD: cart_secret_2026
+    volumes:
+      - cart_db_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cart_admin -d cart_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cart-service:
+    build:
+      context: ./services/cart-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-cart-service
+    environment:
+      - DATABASE_NAME=cart_db
+      - DATABASE_USER=cart_admin
+      - DATABASE_PASSWORD=cart_secret_2026
+      - DATABASE_HOST=cart-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-cart-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+      - USER_SERVICE_URL=http://user-service:8000
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+    volumes:
+      - ./services/cart-service:/app
+    depends_on:
+      cart-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # Order Service
+  # ========================
+  order-db:
+    image: postgres:17-alpine
+    container_name: ecommerce-order-db
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_admin
+      POSTGRES_PASSWORD: order_secret_2026
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_admin -d order_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-order-service
+    environment:
+      - DATABASE_NAME=order_db
+      - DATABASE_USER=order_admin
+      - DATABASE_PASSWORD=order_secret_2026
+      - DATABASE_HOST=order-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-order-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+      - USER_SERVICE_URL=http://user-service:8000
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - CART_SERVICE_URL=http://cart-service:8000
+      - PAYMENT_SERVICE_URL=http://payment-service:8000
+    volumes:
+      - ./services/order-service:/app
+    depends_on:
+      order-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  # ========================
+  # Payment Service
+  # ========================
+  payment-db:
+    image: postgres:17-alpine
+    container_name: ecommerce-payment-db
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment_admin
+      POSTGRES_PASSWORD: payment_secret_2026
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_admin -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-payment-service
+    environment:
+      - DATABASE_NAME=payment_db
+      - DATABASE_USER=payment_admin
+      - DATABASE_PASSWORD=payment_secret_2026
+      - DATABASE_HOST=payment-db
+      - DATABASE_PORT=5432
+      - SECRET_KEY=django-payment-secret-key-2026-ecommerce
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+      - ORDER_SERVICE_URL=http://order-service:8000
+    volumes:
+      - ./services/payment-service:/app
+    depends_on:
+      payment-db:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+# ========================
+# Volumes
+# ========================
+volumes:
+  caddy_data:
+  caddy_config:
+  user_db_data:
+  product_db_data:
+  cart_db_data:
+  order_db_data:
+  payment_db_data:
+
+# ========================
+# Networks
+# ========================
+networks:
+  ecommerce-network:
+    driver: bridge
