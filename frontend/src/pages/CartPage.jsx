@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatVND } from '../utils/currency.js';
 
-function CartPage({ user, setCartCount }) {
+function CartPage({ user, setCartCount, authReady = true }) {
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,11 @@ function CartPage({ user, setCartCount }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { if (!user) { setLoading(false); return; } fetchCart(); }, [user]);
+  useEffect(() => {
+    if (!authReady) return;
+    if (!user) { setLoading(false); return; }
+    fetchCart();
+  }, [user, authReady]);
 
   const fetchCart = async () => {
     try { const data = await api.getCart(); setCart(data); setCartCount(data.total_items || 0); }
@@ -43,6 +47,8 @@ function CartPage({ user, setCartCount }) {
     } catch (err) { setError(err.error || 'Đặt hàng thất bại.'); }
     finally { setSubmitting(false); }
   };
+
+  if (!authReady) return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
 
   if (!user) return (
     <div className="cart-page"><div className="container"><div className="empty-state">

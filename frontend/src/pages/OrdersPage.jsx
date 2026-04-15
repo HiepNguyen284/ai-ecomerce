@@ -3,17 +3,20 @@ import { useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatVND } from '../utils/currency.js';
 
-function OrdersPage({ user }) {
+function OrdersPage({ user, authReady = true }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authReady) return;
     if (!user) { setLoading(false); return; }
     api.getOrders().then((data) => setOrders(Array.isArray(data) ? data : data.results || [])).catch(console.error).finally(() => setLoading(false));
-  }, [user]);
+  }, [user, authReady]);
 
   const statusMap = { pending: 'Chờ xử lý', confirmed: 'Đã xác nhận', processing: 'Đang xử lý', shipped: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
   const statusColors = { pending: 'var(--color-warning)', confirmed: 'var(--color-primary-light)', processing: 'var(--color-secondary)', shipped: 'var(--color-accent-warm)', delivered: 'var(--color-success)', cancelled: 'var(--color-danger)' };
+
+  if (!authReady) return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
 
   if (!user) return (
     <div className="section" style={{ paddingTop: '100px', minHeight: '100vh' }}><div className="container"><div className="empty-state">

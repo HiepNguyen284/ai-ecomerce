@@ -264,6 +264,34 @@ input, textarea, select {
   background: var(--color-bg-card-hover);
 }
 
+.cart-button {
+  position: relative;
+}
+
+.cart-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid #ffffff;
+}
+
 /* ===== Hero Section ===== */
 .hero {
   min-height: 100vh;

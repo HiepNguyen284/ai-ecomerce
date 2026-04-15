@@ -10,18 +10,45 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
+import api from './services/api.js';
 
 function App() {
   const [user, setUser] = useState(null);
   const [cartCount, setCartCount] = useState(0);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      try { setUser(JSON.parse(savedUser)); }
-      catch { localStorage.removeItem('token'); localStorage.removeItem('user'); }
+    let isMounted = true;
+
+    async function bootstrapAuth() {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+
+      if (token && savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          if (isMounted) setUser(parsedUser);
+
+          try {
+            const cart = await api.getCart();
+            if (isMounted) setCartCount(cart?.total_items || 0);
+          } catch {
+            if (isMounted) setCartCount(0);
+          }
+        } catch {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+
+      if (isMounted) setAuthReady(true);
     }
+
+    bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleLogin = (userData, token) => {
@@ -46,11 +73,11 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:slug" element={<ProductDetailPage setCartCount={setCartCount} />} />
-            <Route path="/cart" element={<CartPage user={user} setCartCount={setCartCount} />} />
-            <Route path="/orders" element={<OrdersPage user={user} />} />
+            <Route path="/cart" element={<CartPage user={user} setCartCount={setCartCount} authReady={authReady} />} />
+            <Route path="/orders" element={<OrdersPage user={user} authReady={authReady} />} />
             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
             <Route path="/register" element={<RegisterPage onLogin={handleLogin} />} />
-            <Route path="/admin" element={<AdminPage user={user} />} />
+            <Route path="/admin" element={<AdminPage user={user} authReady={authReady} />} />
           </Routes>
         </main>
         <Footer />

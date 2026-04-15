@@ -14,14 +14,13 @@ function Navbar({ user, cartCount, onLogout }) {
         </ul>
 
         <div className="navbar-actions">
-          <Link to="/cart" className="btn-icon" title="Giỏ hàng" id="cart-button" style={{ position: 'relative' }}>
-            🛒 {cartCount > 0 && <span style={{
-              position: 'absolute', top: '-4px', right: '-4px',
-              background: 'var(--color-accent)', color: 'white',
-              fontSize: '0.7rem', fontWeight: 700, borderRadius: '50%',
-              width: '18px', height: '18px', display: 'flex',
-              alignItems: 'center', justifyContent: 'center'
-            }}>{cartCount}</span>}
+          <Link to="/cart" className="btn-icon cart-button" title="Giỏ hàng" id="cart-button" aria-label="Giỏ hàng">
+            <svg className="cart-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="20" r="1"></circle>
+              <circle cx="18" cy="20" r="1"></circle>
+              <path d="M2 3h2l2.7 11.5a2 2 0 0 0 2 1.5h8.9a2 2 0 0 0 1.9-1.4L22 7H6"></path>
+            </svg>
+            {cartCount > 0 && <span className="cart-badge">{cartCount > 99 ? '99+' : cartCount}</span>}
           </Link>
 
           {user ? (

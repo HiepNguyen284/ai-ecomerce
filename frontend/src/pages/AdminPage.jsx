@@ -89,7 +89,7 @@ function createFormFromProduct(product) {
   };
 }
 
-function AdminPage({ user }) {
+function AdminPage({ user, authReady = true }) {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -193,6 +193,9 @@ function AdminPage({ user }) {
   };
 
   useEffect(() => {
+    if (!authReady) {
+      return;
+    }
     if (!user) {
       navigate('/login');
       return;
@@ -203,7 +206,7 @@ function AdminPage({ user }) {
       return;
     }
     loadAdminData();
-  }, [user]);
+  }, [user, authReady]);
 
   const handleStartCreateProduct = () => {
     resetProductForm(categories[0]?.id || '');
@@ -419,6 +422,10 @@ function AdminPage({ user }) {
       })
       .sort((a, b) => b.totalSpent - a.totalSpent);
   }, [customers, orders, customerSearch]);
+
+  if (!authReady) {
+    return <div className="loading-spinner" style={{ paddingTop: '150px' }}><div className="spinner"></div></div>;
+  }
 
   if (!user) {
     return null;
