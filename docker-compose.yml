@@ -2,18 +2,29 @@ version: "3.9"
 
 services:
   # ========================
-  # API Gateway - Caddy
+  # API Gateway - Django
   # ========================
-  gateway:
-    image: caddy:2-alpine
-    container_name: ecommerce-gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: ecommerce-api-gateway
     ports:
-      - "8080:80"
-      - "443:443"
+      - "8080:8000"
+    environment:
+      - SECRET_KEY=django-api-gateway-secret-key-2026
+      - DEBUG=1
+      - ALLOWED_HOSTS=*
+      - USER_SERVICE_URL=http://user-service:8000
+      - PRODUCT_SERVICE_URL=http://product-service:8000
+      - CART_SERVICE_URL=http://cart-service:8000
+      - ORDER_SERVICE_URL=http://order-service:8000
+      - PAYMENT_SERVICE_URL=http://payment-service:8000
+      - CHATBOT_SERVICE_URL=http://chatbot-service:8000
+      - FRONTEND_URL=http://frontend:5173
+      - PROXY_TIMEOUT=60
     volumes:
-      - ./gateway/Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
+      - ./services/api-gateway:/app
     depends_on:
       - user-service
       - product-service
@@ -268,8 +279,6 @@ services:
 # Volumes
 # ========================
 volumes:
-  caddy_data:
-  caddy_config:
   postgres_data:
   neo4j_data:
 

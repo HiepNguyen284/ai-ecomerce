@@ -6,14 +6,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: true,
     watch: {
       usePolling: true,
     },
-    proxy: {
-      '/api': {
-        target: 'http://gateway:80',
-        changeOrigin: true,
-      }
-    }
   },
 })
