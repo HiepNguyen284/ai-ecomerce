@@ -331,7 +331,7 @@ def generate_response(user_query, retrieved_products, conversation_history=None)
     """
     Generate a consultation response using Google Gemini.
     Falls back to a template-based response if Gemini is unavailable.
-    Retries on rate-limit (429) errors with exponential backoff.
+    Uses a cooldown to skip retries when the quota is exhausted.
     """
     import time
 
@@ -344,47 +344,46 @@ def generate_response(user_query, retrieved_products, conversation_history=None)
         # Fallback: template-based response without LLM
         return _fallback_response(user_query, retrieved_products), product_ids
 
+    # Skip Gemini if we recently hit a rate limit (cooldown period)
+    global _gemini_rate_limit_until
+    now = time.time()
+    if _gemini_rate_limit_until and now < _gemini_rate_limit_until:
+        remaining = int(_gemini_rate_limit_until - now)
+        logger.info(f'Gemini rate limit cooldown active ({remaining}s remaining), using fallback')
+        return _fallback_response(user_query, retrieved_products), product_ids
+
     # Limit to top 3 products to reduce token count and quota usage
     limited_products = retrieved_products[:3]
     prompt = build_rag_prompt(user_query, limited_products, conversation_history)
 
-    max_retries = 3
-    base_delay = 5  # seconds
+    try:
+        response = gemini.generate_content(
+            prompt,
+            generation_config={
+                'temperature': 0.3,
+                'top_p': 0.9,
+                'top_k': 40,
+                'max_output_tokens': 800,
+            },
+        )
+        answer = response.text.strip()
+        logger.info(f'Generated response ({len(answer)} chars) for query: "{user_query[:50]}"')
+        return answer, product_ids
 
-    for attempt in range(max_retries):
-        try:
-            response = gemini.generate_content(
-                prompt,
-                generation_config={
-                    'temperature': 0.3,
-                    'top_p': 0.9,
-                    'top_k': 40,
-                    'max_output_tokens': 800,
-                },
-            )
-            answer = response.text.strip()
-            logger.info(f'Generated response ({len(answer)} chars) for query: "{user_query[:50]}"')
-            return answer, product_ids
+    except Exception as e:
+        error_str = str(e)
+        if '429' in error_str or 'quota' in error_str.lower():
+            # Set cooldown: skip Gemini for 60 seconds to avoid slow retries
+            _gemini_rate_limit_until = now + 60
+            logger.warning(f'Gemini quota exceeded, cooldown for 60s. Error: {error_str[:100]}')
+        else:
+            logger.error(f'Gemini generation error: {e}')
 
-        except Exception as e:
-            error_str = str(e)
-            if '429' in error_str or 'quota' in error_str.lower():
-                delay = base_delay * (2 ** attempt)
-                logger.warning(
-                    f'Gemini rate limit hit (attempt {attempt + 1}/{max_retries}), '
-                    f'retrying in {delay}s...'
-                )
-                if attempt < max_retries - 1:
-                    time.sleep(delay)
-                    continue
-                else:
-                    logger.error(f'Gemini rate limit exceeded after {max_retries} retries')
-            else:
-                logger.error(f'Gemini generation error: {e}')
-            
-            return _fallback_response(user_query, retrieved_products), product_ids
+        return _fallback_response(user_query, retrieved_products), product_ids
 
-    return _fallback_response(user_query, retrieved_products), product_ids
+
+# Cooldown timestamp — when set, Gemini calls are skipped until this time
+_gemini_rate_limit_until = None
 
 
 def _fallback_response(user_query, retrieved_products):

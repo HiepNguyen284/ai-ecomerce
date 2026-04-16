@@ -2936,3 +2936,96 @@ main.admin-main {
     padding: 8px !important;
   }
 }
+
+/* ============================================================
+   RELATED PRODUCTS SECTION
+   ============================================================ */
+
+.related-products-section {
+  margin-top: 32px;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(30, 136, 229, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.related-products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(30, 136, 229, 0.08);
+}
+
+.related-products-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  margin: 0;
+  background: linear-gradient(135deg, #1565c0, #1e88e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.related-products-title svg {
+  stroke: #1e88e5;
+}
+
+.related-products-count {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  background: rgba(30, 136, 229, 0.08);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.related-products-grid .product-card {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.related-products-grid .product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1024px) {
+  .related-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .related-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .related-products-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .related-products-title {
+    font-size: 1rem;
+  }
+}

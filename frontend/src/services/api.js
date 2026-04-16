@@ -81,6 +81,12 @@ class ApiService {
     });
   }
 
+  async getRelatedProducts(slug) {
+    return this.request(`${this.baseUrl}/products/${slug}/related/`, {
+      headers: this.getHeaders(),
+    });
+  }
+
   async getCategories() {
     return this.request(`${this.baseUrl}/products/categories/`, {
       headers: this.getHeaders(),

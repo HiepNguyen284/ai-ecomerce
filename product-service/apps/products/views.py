@@ -191,6 +191,25 @@ class AdminProductDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class RelatedProductsView(APIView):
+    """Return related products from the same category."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug):
+        try:
+            product = Product.objects.select_related('category').get(slug=slug, is_active=True)
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        related = Product.objects.filter(
+            category=product.category,
+            is_active=True,
+        ).exclude(id=product.id).order_by('?')[:8]
+
+        serializer = ProductListSerializer(related, many=True)
+        return Response(serializer.data)
+
+
 class HealthCheckView(APIView):
     permission_classes = [AllowAny]
 

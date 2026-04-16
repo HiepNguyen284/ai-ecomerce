@@ -11,12 +11,14 @@ function ProductDetailPage({ setCartCount }) {
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   useEffect(() => {
     setLoading(true);
     setQuantity(1);
     setMessage('');
     setError('');
+    setRelatedProducts([]);
     api.getProduct(slug).then((data) => {
       setProduct(data);
       // Track this product view for AI recommendations
@@ -24,6 +26,11 @@ function ProductDetailPage({ setCartCount }) {
         api.trackProductView(data.id);
       }
     }).catch(() => setError('Không tìm thấy sản phẩm.')).finally(() => setLoading(false));
+
+    // Fetch related products
+    api.getRelatedProducts(slug)
+      .then((data) => setRelatedProducts(Array.isArray(data) ? data : []))
+      .catch(() => setRelatedProducts([]));
   }, [slug]);
 
   const handleAddToCart = async () => {
@@ -140,6 +147,52 @@ function ProductDetailPage({ setCartCount }) {
             </div>
           </div>
         </div>
+
+        {/* Related Products Section */}
+        {relatedProducts.length > 0 && (
+          <div className="related-products-section">
+            <div className="related-products-header">
+              <h2 className="related-products-title">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8, verticalAlign: 'middle' }}>
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                Sản phẩm liên quan
+              </h2>
+              <span className="related-products-count">{relatedProducts.length} sản phẩm cùng danh mục</span>
+            </div>
+            <div className="related-products-grid">
+              {relatedProducts.map((rp) => (
+                <Link to={`/products/${rp.slug}`} key={rp.id} className="product-card" id={`related-${rp.id}`}>
+                  {rp.discount_percent > 0 && (
+                    <div className="product-card-badge">-{rp.discount_percent}%</div>
+                  )}
+                  <div className="product-card-image">
+                    <img src={rp.image_url || `https://placehold.co/300x300/f8fafc/334155?text=${encodeURIComponent(rp.name)}`}
+                      alt={rp.name} loading="lazy" />
+                  </div>
+                  <div className="product-card-body">
+                    <div className="product-card-category">{rp.category_name}</div>
+                    <h3 className="product-card-name">{rp.name}</h3>
+                    <div className="product-card-rating">
+                      <span className="stars">{'★'.repeat(Math.floor(rp.rating))}</span>
+                      <span className="rating-value">{rp.rating}</span>
+                      <span className="sold-count">Đã bán {rp.num_reviews}</span>
+                    </div>
+                    <div className="product-card-price">
+                      <span className="current">{formatVND(rp.price)}</span>
+                      {rp.compare_price && (
+                        <span className="original">{formatVND(rp.compare_price)}</span>
+                      )}
+                    </div>
+                    <div className={`product-card-stock ${rp.is_in_stock ? 'in-stock' : 'out-stock'}`}>
+                      {rp.is_in_stock ? '✓ Còn hàng' : '✕ Hết hàng'}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
