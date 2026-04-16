@@ -13,7 +13,7 @@ python manage.py migrate --noinput
 echo "Waiting for product-service to be ready..."
 MAX_RETRIES=15
 RETRY_COUNT=0
-until wget --spider --quiet http://product-service:8000/products/ 2>/dev/null; do
+until python -c "import urllib.request; urllib.request.urlopen('http://product-service:8000/products/', timeout=5)" 2>/dev/null; do
   RETRY_COUNT=$((RETRY_COUNT + 1))
   if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
     echo "WARNING: product-service not ready after ${MAX_RETRIES} attempts, starting anyway..."
@@ -23,8 +23,13 @@ until wget --spider --quiet http://product-service:8000/products/ 2>/dev/null; d
   sleep 3
 done
 
-echo "Syncing products for RAG..."
-python manage.py sync_products --max-retries 3
+echo "Starting chatbot service (product sync will run in background)..."
 
-echo "Starting chatbot service..."
+# Run sync_products in the background so the server starts immediately
+(
+  echo "Background: Starting product sync for RAG..."
+  python manage.py sync_products --max-retries 3
+  echo "Background: Product sync completed!"
+) &
+
 exec python manage.py runserver 0.0.0.0:8000

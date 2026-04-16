@@ -146,8 +146,12 @@ def index_products(products):
     if not documents:
         return 0
 
-    # Generate embeddings in batch
-    embeddings = model.encode(documents).tolist()
+    # Generate embeddings in batch with progress logging
+    logger.info(f'Encoding {len(documents)} documents with {EMBEDDING_MODEL_NAME}...')
+    print(f'Encoding {len(documents)} documents...', flush=True)
+    embeddings = model.encode(documents, batch_size=32, show_progress_bar=False).tolist()
+    logger.info(f'Encoding complete for {len(documents)} documents')
+    print(f'Encoding complete!', flush=True)
     
     for i, data in enumerate(nodes_data):
         data['embedding'] = embeddings[i]
@@ -170,11 +174,15 @@ def index_products(products):
 
     with driver.session() as session:
         # Batch inserting into Neo4j
-        batch_size = 100
+        batch_size = 50
         for i in range(0, len(nodes_data), batch_size):
-            session.run(merge_query, batch=nodes_data[i:i+batch_size])
+            batch_end = min(i + batch_size, len(nodes_data))
+            session.run(merge_query, batch=nodes_data[i:batch_end])
+            logger.info(f'Indexed batch {i//batch_size + 1}: products {i+1}-{batch_end}')
+            print(f'Indexed batch {i//batch_size + 1}: products {i+1}-{batch_end}', flush=True)
 
     logger.info(f'Indexed {len(documents)} products into Neo4j Knowledge Graph')
+    print(f'Successfully indexed {len(documents)} products into Neo4j!', flush=True)
     return len(documents)
 
 
@@ -187,6 +195,18 @@ def search_products(query, top_k=TOP_K_RESULTS, filter_in_stock=True):
     """
     driver = get_neo4j_driver()
     model = get_embedding_model()
+
+    # Check if products are indexed
+    try:
+        with driver.session() as session:
+            result = session.run('MATCH (p:Product) RETURN count(p) AS cnt')
+            record = result.single()
+            if not record or record['cnt'] == 0:
+                logger.warning('No products indexed yet — search skipped')
+                return []
+    except Exception as e:
+        logger.error(f'Error checking product count: {e}')
+        return []
 
     # Encode the query
     query_embedding = model.encode([query]).tolist()[0]
@@ -311,7 +331,10 @@ def generate_response(user_query, retrieved_products, conversation_history=None)
     """
     Generate a consultation response using Google Gemini.
     Falls back to a template-based response if Gemini is unavailable.
+    Retries on rate-limit (429) errors with exponential backoff.
     """
+    import time
+
     gemini = get_gemini_model()
 
     # Extract product IDs for reference tracking
@@ -321,30 +344,62 @@ def generate_response(user_query, retrieved_products, conversation_history=None)
         # Fallback: template-based response without LLM
         return _fallback_response(user_query, retrieved_products), product_ids
 
-    prompt = build_rag_prompt(user_query, retrieved_products, conversation_history)
+    # Limit to top 3 products to reduce token count and quota usage
+    limited_products = retrieved_products[:3]
+    prompt = build_rag_prompt(user_query, limited_products, conversation_history)
 
-    try:
-        response = gemini.generate_content(
-            prompt,
-            generation_config={
-                'temperature': 0.3,
-                'top_p': 0.9,
-                'top_k': 40,
-                'max_output_tokens': 1024,
-            },
-        )
-        answer = response.text.strip()
-        logger.info(f'Generated response ({len(answer)} chars) for query: "{user_query[:50]}"')
-        return answer, product_ids
+    max_retries = 3
+    base_delay = 5  # seconds
 
-    except Exception as e:
-        logger.error(f'Gemini generation error: {e}')
-        return _fallback_response(user_query, retrieved_products), product_ids
+    for attempt in range(max_retries):
+        try:
+            response = gemini.generate_content(
+                prompt,
+                generation_config={
+                    'temperature': 0.3,
+                    'top_p': 0.9,
+                    'top_k': 40,
+                    'max_output_tokens': 800,
+                },
+            )
+            answer = response.text.strip()
+            logger.info(f'Generated response ({len(answer)} chars) for query: "{user_query[:50]}"')
+            return answer, product_ids
+
+        except Exception as e:
+            error_str = str(e)
+            if '429' in error_str or 'quota' in error_str.lower():
+                delay = base_delay * (2 ** attempt)
+                logger.warning(
+                    f'Gemini rate limit hit (attempt {attempt + 1}/{max_retries}), '
+                    f'retrying in {delay}s...'
+                )
+                if attempt < max_retries - 1:
+                    time.sleep(delay)
+                    continue
+                else:
+                    logger.error(f'Gemini rate limit exceeded after {max_retries} retries')
+            else:
+                logger.error(f'Gemini generation error: {e}')
+            
+            return _fallback_response(user_query, retrieved_products), product_ids
+
+    return _fallback_response(user_query, retrieved_products), product_ids
 
 
 def _fallback_response(user_query, retrieved_products):
     """Template-based fallback when LLM is unavailable."""
     if not retrieved_products:
+        # Check if index is empty (system still initializing)
+        try:
+            count = get_indexed_product_count()
+            if count == 0:
+                return (
+                    'Hệ thống đang được khởi tạo và cập nhật dữ liệu sản phẩm. '
+                    'Vui lòng thử lại sau ít phút nhé! ⏳'
+                )
+        except Exception:
+            pass
         return (
             'Xin lỗi, hiện tại mình không tìm thấy sản phẩm phù hợp với yêu cầu của bạn. '
             'Bạn có thể mô tả cụ thể hơn nhu cầu để mình giúp tìm được chính xác hơn nhé!'
