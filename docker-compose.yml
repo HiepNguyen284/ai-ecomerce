@@ -6,7 +6,7 @@ services:
   # ========================
   api-gateway:
     build:
-      context: ./services/api-gateway
+      context: ./api-gateway
       dockerfile: Dockerfile
     container_name: ecommerce-api-gateway
     ports:
@@ -24,7 +24,7 @@ services:
       - FRONTEND_URL=http://frontend:5173
       - PROXY_TIMEOUT=60
     volumes:
-      - ./services/api-gateway:/app
+      - ./api-gateway:/app
     depends_on:
       - user-service
       - product-service
@@ -83,7 +83,7 @@ services:
   # ========================
   user-service:
     build:
-      context: ./services/user-service
+      context: ./user-service
       dockerfile: Dockerfile
     container_name: ecommerce-user-service
     environment:
@@ -96,7 +96,7 @@ services:
       - DEBUG=1
       - ALLOWED_HOSTS=*
     volumes:
-      - ./services/user-service:/app
+      - ./user-service:/app
     depends_on:
       ecommerce-db:
         condition: service_healthy
@@ -109,7 +109,7 @@ services:
   # ========================
   product-service:
     build:
-      context: ./services/product-service
+      context: ./product-service
       dockerfile: Dockerfile
     container_name: ecommerce-product-service
     environment:
@@ -123,7 +123,7 @@ services:
       - ALLOWED_HOSTS=*
       - USER_SERVICE_URL=http://user-service:8000
     volumes:
-      - ./services/product-service:/app
+      - ./product-service:/app
     depends_on:
       ecommerce-db:
         condition: service_healthy
@@ -136,7 +136,7 @@ services:
   # ========================
   cart-service:
     build:
-      context: ./services/cart-service
+      context: ./cart-service
       dockerfile: Dockerfile
     container_name: ecommerce-cart-service
     environment:
@@ -151,7 +151,7 @@ services:
       - USER_SERVICE_URL=http://user-service:8000
       - PRODUCT_SERVICE_URL=http://product-service:8000
     volumes:
-      - ./services/cart-service:/app
+      - ./cart-service:/app
     depends_on:
       ecommerce-db:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
   # ========================
   order-service:
     build:
-      context: ./services/order-service
+      context: ./order-service
       dockerfile: Dockerfile
     container_name: ecommerce-order-service
     environment:
@@ -181,7 +181,7 @@ services:
       - CART_SERVICE_URL=http://cart-service:8000
       - PAYMENT_SERVICE_URL=http://payment-service:8000
     volumes:
-      - ./services/order-service:/app
+      - ./order-service:/app
     depends_on:
       ecommerce-db:
         condition: service_healthy
@@ -194,7 +194,7 @@ services:
   # ========================
   payment-service:
     build:
-      context: ./services/payment-service
+      context: ./payment-service
       dockerfile: Dockerfile
     container_name: ecommerce-payment-service
     environment:
@@ -209,7 +209,7 @@ services:
       - ORDER_SERVICE_URL=http://order-service:8000
       - USER_SERVICE_URL=http://user-service:8000
     volumes:
-      - ./services/payment-service:/app
+      - ./payment-service:/app
     depends_on:
       ecommerce-db:
         condition: service_healthy
@@ -222,7 +222,7 @@ services:
   # ========================
   chatbot-service:
     build:
-      context: ./services/chatbot-service
+      context: ./chatbot-service
       dockerfile: Dockerfile
     container_name: ecommerce-chatbot-service
     environment:
@@ -241,7 +241,7 @@ services:
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=password
     volumes:
-      - ./services/chatbot-service:/app
+      - ./chatbot-service:/app
     depends_on:
       ecommerce-db:
         condition: service_healthy
