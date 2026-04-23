@@ -18,7 +18,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'apps.products',
-    'apps.recommendations',
 ]
 
 MIDDLEWARE = [

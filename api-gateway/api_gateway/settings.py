@@ -47,7 +47,7 @@ SERVICE_ROUTES = {
     'cart':     os.environ.get('CART_SERVICE_URL',     'http://cart-service:8000'),
     'orders':   os.environ.get('ORDER_SERVICE_URL',   'http://order-service:8000'),
     'payments': os.environ.get('PAYMENT_SERVICE_URL', 'http://payment-service:8000'),
-    'chatbot':  os.environ.get('CHATBOT_SERVICE_URL', 'http://chatbot-service:8000'),
+    'ai':       os.environ.get('AI_SERVICE_URL',      'http://ai-service:8000'),
 }
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://frontend:5173')

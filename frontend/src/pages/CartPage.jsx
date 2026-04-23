@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatVND } from '../utils/currency.js';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
 function CartPage({ user, setCartCount, authReady = true }) {
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
@@ -12,12 +14,31 @@ function CartPage({ user, setCartCount, authReady = true }) {
   const [orderForm, setOrderForm] = useState({ shipping_name: '', shipping_phone: '', shipping_address: '', note: '' });
   const [showCheckout, setShowCheckout] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [aiRecs, setAiRecs] = useState([]);
 
   useEffect(() => {
     if (!authReady) return;
     if (!user) { setLoading(false); return; }
     fetchCart();
   }, [user, authReady]);
+
+  // Fetch AI recommendations when cart loads
+  useEffect(() => {
+    if (!cart || !cart.items || cart.items.length === 0) {
+      // Fallback: fetch popular products
+      fetch(`${API_BASE}/ai/recommendations/cart/?limit=6`)
+        .then(r => r.json())
+        .then(data => setAiRecs(data.recommendations || []))
+        .catch(() => setAiRecs([]));
+      return;
+    }
+    // Use product IDs from cart for collaborative filtering
+    const productIds = cart.items.map(item => item.product_id).filter(Boolean).join(',');
+    fetch(`${API_BASE}/ai/recommendations/cart/?product_ids=${productIds}&limit=6`)
+      .then(r => r.json())
+      .then(data => setAiRecs(data.recommendations || []))
+      .catch(() => setAiRecs([]));
+  }, [cart]);
 
   const fetchCart = async () => {
     try { const data = await api.getCart(); setCart(data); setCartCount(data.total_items || 0); }
@@ -138,6 +159,33 @@ function CartPage({ user, setCartCount, authReady = true }) {
                   </form>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ── AI Recommendations: Có thể bạn cũng thích ── */}
+        {aiRecs.length > 0 && (
+          <div className="ai-rec-section ai-rec-section--cart" id="cart-ai-recommendations">
+            <div className="ai-rec-header">
+              <span className="ai-rec-badge">🧠 AI Gợi ý</span>
+              <h3>Có thể bạn cũng thích — Dựa trên Knowledge Graph</h3>
+            </div>
+            <div className="ai-rec-scroll">
+              {aiRecs.map((rec, i) => (
+                <Link to={`/products/${rec.slug || rec.id}`} key={rec.id} className="ai-rec-card">
+                  <div className="ai-rec-rank">#{i + 1}</div>
+                  <div className="ai-rec-info">
+                    <span className="ai-rec-name">{rec.name}</span>
+                    <span className="ai-rec-cat">{rec.category_name}</span>
+                    <span className="ai-rec-stats">
+                      👥 {rec.co_buyers} người cùng mua
+                    </span>
+                  </div>
+                  {rec.price > 0 && (
+                    <span className="ai-rec-price">{formatVND(rec.price)}</span>
+                  )}
+                </Link>
+              ))}
             </div>
           </div>
         )}

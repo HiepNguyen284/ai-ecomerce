@@ -21,10 +21,6 @@ function ProductDetailPage({ setCartCount }) {
     setRelatedProducts([]);
     api.getProduct(slug).then((data) => {
       setProduct(data);
-      // Track this product view for AI recommendations
-      if (data && data.id) {
-        api.trackProductView(data.id);
-      }
     }).catch(() => setError('Không tìm thấy sản phẩm.')).finally(() => setLoading(false));
 
     // Fetch related products

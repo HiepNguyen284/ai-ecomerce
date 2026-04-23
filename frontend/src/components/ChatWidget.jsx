@@ -21,14 +21,23 @@ function formatPrice(price) {
   }
 }
 
+/* ─── Default suggestions ─────────────────────────────────────────── */
+const DEFAULT_SUGGESTIONS = [
+  '📊 Thống kê tổng quan',
+  '🛒 Gợi ý sản phẩm cho tôi',
+  '🏆 Top sản phẩm bán chạy',
+  '📈 Phân tích funnel chuyển đổi',
+  '📁 Thống kê theo danh mục',
+  '👥 Tìm người dùng tương tự',
+];
+
 /* ─── Chat Widget Component ───────────────────────────────────────── */
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
   const [showWelcome, setShowWelcome] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -41,23 +50,6 @@ export default function ChatWidget() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
-
-  // Load suggestions
-  useEffect(() => {
-    if (isOpen && suggestions.length === 0) {
-      fetch(`${API_BASE}/chatbot/suggestions/`)
-        .then(r => r.json())
-        .then(data => setSuggestions(data.suggestions || []))
-        .catch(() => {
-          setSuggestions([
-            'Gợi ý sản phẩm đang giảm giá mạnh nhất',
-            'Tư vấn sản phẩm phù hợp ngân sách dưới 3 triệu',
-            'Sản phẩm nào được đánh giá cao và còn hàng?',
-            'Cho mình top sản phẩm bán chạy hiện tại',
-          ]);
-        });
-    }
-  }, [isOpen, suggestions.length]);
 
   // Focus input when opened
   useEffect(() => {
@@ -76,24 +68,20 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      const resp = await fetch(`${API_BASE}/chatbot/chat/`, {
+      const resp = await fetch(`${API_BASE}/ai/chat/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          session_id: getSessionId(),
-          ...(conversationId && { conversation_id: conversationId }),
-        }),
+        body: JSON.stringify({ message: text }),
       });
 
       if (!resp.ok) throw new Error('Chat request failed');
 
       const data = await resp.json();
-      setConversationId(data.conversation_id);
 
       const assistantMessage = {
         role: 'assistant',
-        content: data.response,
+        content: data.answer || data.response || 'Không có phản hồi.',
+        intent: data.intent,
         products: data.products || [],
         timestamp: new Date(),
       };
@@ -127,7 +115,6 @@ export default function ChatWidget() {
 
   const resetChat = () => {
     setMessages([]);
-    setConversationId(null);
     setShowWelcome(true);
   };
 
@@ -169,7 +156,7 @@ export default function ChatWidget() {
             <div>
               <h3 className="chatbot-header-title">Trợ lý AI ShopEase</h3>
               <span className="chatbot-header-status">
-                <span className="chatbot-status-dot" /> Sẵn sàng tư vấn
+                <span className="chatbot-status-dot" /> RAG + Neo4j KB Graph
               </span>
             </div>
           </div>
@@ -193,9 +180,9 @@ export default function ChatWidget() {
         <div className="chatbot-messages">
           {showWelcome && messages.length === 0 && (
             <div className="chatbot-welcome">
-              <div className="chatbot-welcome-icon">🛍️</div>
+              <div className="chatbot-welcome-icon">🧠</div>
               <h4>Xin chào! 👋</h4>
-              <p>Mình là trợ lý AI của ShopEase. Mình có thể giúp bạn tìm sản phẩm, so sánh giá, và tư vấn mua hàng.</p>
+              <p>Mình là trợ lý AI của ShopEase, được hỗ trợ bởi <strong>Knowledge Graph (Neo4j)</strong> và <strong>RAG Engine</strong>. Mình có thể giúp bạn phân tích hành vi, gợi ý sản phẩm, và thống kê dữ liệu.</p>
               {suggestions.length > 0 && (
                 <div className="chatbot-suggestions">
                   <p className="chatbot-suggestions-label">Gợi ý cho bạn:</p>
@@ -230,9 +217,18 @@ export default function ChatWidget() {
                   dangerouslySetInnerHTML={{
                     __html: msg.content
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/_(.*?)_/g, '<em>$1</em>')
+                      .replace(/`(.*?)`/g, '<code>$1</code>')
+                      .replace(/█+/g, (m) => `<span style="color:var(--accent-primary,#6c63ff)">${m}</span>`)
                       .replace(/\n/g, '<br/>')
                   }}
                 />
+                {/* Intent badge for assistant messages */}
+                {msg.role === 'assistant' && msg.intent && (
+                  <div className="chatbot-intent-badge">
+                    <span className="chatbot-intent-tag">{msg.intent}</span>
+                  </div>
+                )}
                 {/* Product Cards */}
                 {msg.products && msg.products.length > 0 && (
                   <div className="chatbot-products">
@@ -291,6 +287,17 @@ export default function ChatWidget() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Suggestion chips after messages */}
+        {messages.length > 0 && !loading && (
+          <div className="chatbot-quick-actions">
+            {['📊 Thống kê tổng quan', '🛒 Gợi ý sản phẩm', '📈 Funnel'].map((s, i) => (
+              <button key={i} className="chatbot-quick-chip" onClick={() => handleSuggestion(s)}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Input Area */}
         <form className="chatbot-input-area" onSubmit={handleSubmit}>
           <input
@@ -300,7 +307,7 @@ export default function ChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Hỏi về sản phẩm..."
+            placeholder="Hỏi về hành vi, sản phẩm, thống kê..."
             disabled={loading}
             maxLength={2000}
             id="chatbot-input"

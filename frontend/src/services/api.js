@@ -226,70 +226,15 @@ class ApiService {
     });
   }
 
-  // Chatbot
-  async sendChatMessage(message, sessionId, conversationId = null) {
-    const body = { message, session_id: sessionId };
-    if (conversationId) body.conversation_id = conversationId;
-    return this.request(`${this.baseUrl}/chatbot/chat/`, {
+  // AI Chat (RAG + Neo4j KB Graph)
+  async sendChatMessage(message) {
+    return this.request(`${this.baseUrl}/ai/chat/`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify(body),
-    });
-  }
-
-  async getChatSuggestions() {
-    return this.request(`${this.baseUrl}/chatbot/suggestions/`, {
-      headers: this.getHeaders(),
-    });
-  }
-
-  async getChatHistory(sessionId) {
-    return this.request(`${this.baseUrl}/chatbot/history/${sessionId}/`, {
-      headers: this.getHeaders(),
-    });
-  }
-
-  // ==================
-  // Recommendations
-  // ==================
-
-  getSessionId() {
-    let sessionId = localStorage.getItem('rec_session_id');
-    if (!sessionId) {
-      sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('rec_session_id', sessionId);
-    }
-    return sessionId;
-  }
-
-  async trackProductView(productId) {
-    const session_id = this.getSessionId();
-    try {
-      return await this.request(`${this.baseUrl}/products/recommendations/track/`, {
-        method: 'POST',
-        headers: this.getHeaders(true),
-        body: JSON.stringify({ product_id: productId, session_id }),
-      });
-    } catch (err) {
-      // Silently fail tracking - don't break user experience
-      console.debug('Track view failed:', err);
-      return null;
-    }
-  }
-
-  async getRecommendations() {
-    const session_id = this.getSessionId();
-    return this.request(
-      `${this.baseUrl}/products/recommendations/?session_id=${encodeURIComponent(session_id)}`,
-      { headers: this.getHeaders(true) }
-    );
-  }
-
-  async getTrendingCategories() {
-    return this.request(`${this.baseUrl}/products/recommendations/trending/`, {
-      headers: this.getHeaders(),
+      body: JSON.stringify({ message }),
     });
   }
 }
 
 export default new ApiService();
+

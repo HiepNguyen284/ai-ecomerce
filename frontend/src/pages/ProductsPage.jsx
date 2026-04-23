@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatVND } from '../utils/currency.js';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
 function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -11,6 +13,7 @@ function ProductsPage() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [ordering, setOrdering] = useState('-created_at');
+  const [aiRecs, setAiRecs] = useState([]);
 
   const normalizeList = (payload) => {
     if (Array.isArray(payload)) return payload;
@@ -20,6 +23,14 @@ function ProductsPage() {
 
   useEffect(() => {
     api.getCategories().then((data) => setCategories(normalizeList(data))).catch(console.error);
+  }, []);
+
+  // Fetch AI recommendations
+  useEffect(() => {
+    fetch(`${API_BASE}/ai/recommendations/products/?limit=8`)
+      .then(r => r.json())
+      .then(data => setAiRecs(data.recommendations || []))
+      .catch(() => setAiRecs([]));
   }, []);
 
   // Sync URL params → state when URL changes (e.g. navigating from HomePage)
@@ -62,6 +73,33 @@ function ProductsPage() {
           <span className="breadcrumb-sep">/</span>
           <span>Tất cả sản phẩm</span>
         </div>
+
+        {/* ── AI Recommendations Banner ── */}
+        {aiRecs.length > 0 && (
+          <div className="ai-rec-section" id="ai-recommendations">
+            <div className="ai-rec-header">
+              <span className="ai-rec-badge">🧠 AI Gợi ý</span>
+              <h3>Sản phẩm phổ biến nhất — Dựa trên Knowledge Graph</h3>
+            </div>
+            <div className="ai-rec-scroll">
+              {aiRecs.map((rec, i) => (
+                <Link to={`/products/${rec.slug || rec.id}`} key={rec.id} className="ai-rec-card">
+                  <div className="ai-rec-rank">#{i + 1}</div>
+                  <div className="ai-rec-info">
+                    <span className="ai-rec-name">{rec.name}</span>
+                    <span className="ai-rec-cat">{rec.category_name}</span>
+                    <span className="ai-rec-stats">
+                      🛒 {rec.buyers} mua · 👁 {rec.viewers} xem
+                    </span>
+                  </div>
+                  {rec.price > 0 && (
+                    <span className="ai-rec-price">{formatVND(rec.price)}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="products-layout">
           {/* Sidebar Filters */}
@@ -165,3 +203,4 @@ function ProductsPage() {
 }
 
 export default ProductsPage;
+
